@@ -1,4 +1,5 @@
 import type { OcrLine } from './ocr.js'
+import { splitGluedUnits } from './packSize.js'
 
 export interface ParsedItem {
   name: string
@@ -205,7 +206,12 @@ export function parseCatalogLines(lines: OcrLine[]): ParseOutcome {
       continue
     }
 
-    const name = cleanName(`${text.slice(0, priceHit.start)} ${text.slice(priceHit.end)}`)
+    // OCR often runs a pack size into the word before it ("Atta5kg"), which has
+    // the shape of a reference code and would be thrown out by the check below.
+    // Ungluing it first lets the row through as the pack size it really is,
+    // without relaxing that check: only a unit that ends its token is separated,
+    // and a GSTIN or bank reference never ends in a printed unit.
+    const name = splitGluedUnits(cleanName(`${text.slice(0, priceHit.start)} ${text.slice(priceHit.end)}`))
     if (isJunkName(name)) {
       reject(text, name ? `“${clip(name, 28)}” does not look like an item name` : 'No item name next to the price')
       continue

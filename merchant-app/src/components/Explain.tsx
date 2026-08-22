@@ -132,6 +132,8 @@ export function WhyCatalog({ provenance, sourceImageName }: {
 
   const matched = evidence?.resolved.filter((item) => item.matched) ?? []
   const unmatched = evidence?.resolved.filter((item) => !item.matched) ?? []
+  // Rows where the lexicon wanted a different name from the one on the card.
+  const keptAsPrinted = matched.filter((item) => item.evidence.nameKeptAsPrinted)
 
   return (
     <Why label="How this was read from your photo" badge={provenance?.engine ?? evidence?.engine ?? 'OCR'}>
@@ -145,6 +147,9 @@ export function WhyCatalog({ provenance, sourceImageName }: {
       <Row label="Rows skipped" value={provenance?.rowsRejected ?? evidence?.rejected.length ?? 0} />
       <Row label="Step 3 — resolve names" value="Token-set ratio + normalised edit distance vs product lexicon" />
       {evidence && <Row label="Matched a known product" value={`${matched.length} of ${evidence.resolved.length}`} />}
+      {keptAsPrinted.length > 0 && (
+        <Row label="Names kept as printed" value={`${keptAsPrinted.length} — the lexicon disagreed with the card`} />
+      )}
       {provenance?.durationMs != null && <Row label="Time on device" value={`${(provenance.durationMs / 1000).toFixed(1)}s`} />}
 
       {matched.length > 0 && (
@@ -159,6 +164,7 @@ export function WhyCatalog({ provenance, sourceImageName }: {
                 {item.evidence.priceBand && ` · typical ${item.evidence.priceBand}`}
                 {` · ${item.confidencePct}% confidence`}
                 {item.evidence.runnerUp && ` · runner-up ${item.evidence.runnerUp}`}
+                {item.name !== item.evidence.matchedProduct && ` · name ${item.evidence.nameNote}`}
               </span>
             </div>
           ))}
@@ -191,8 +197,9 @@ export function WhyCatalog({ provenance, sourceImageName }: {
 
       <Note>
         Nothing here was invented: every row comes from text the reader actually saw, and skipped
-        lines are listed with the reason. A price list shows prices, not shelf counts, so stock stays
-        an estimate until you correct it.
+        lines are listed with the reason. Where the photo printed a pack size, that pack size is what
+        you see — a matched product never restates it and never adds one the card did not print. A
+        price list shows prices, not shelf counts, so stock stays an estimate until you correct it.
       </Note>
     </Why>
   )

@@ -1,9 +1,10 @@
-import { bestMatch, type SimilarityBreakdown } from '../../intelligence/fuzzy.js'
+import { bestMatch, editSimilarity, type SimilarityBreakdown } from '../../intelligence/fuzzy.js'
 import {
   CATEGORY_FALLBACK, describeBand, lexiconAliases, priceBandFit,
   PRODUCT_LEXICON, type LexiconEntry,
 } from '../../intelligence/lexicon.js'
 import type { ParsedItem } from './parseCatalog.js'
+import { readPackSize, samePackSize, stripPackSize } from './packSize.js'
 
 /** Why one catalog row looks the way it does. Rendered in the UI verbatim. */
 export interface ItemEvidence {
@@ -24,12 +25,23 @@ export interface ItemEvidence {
   priceBandFit: number | null
   /** OCR engine confidence for the source line, 0..100. */
   ocrConfidencePct: number
+  /** Pack size the photo actually printed, if it printed one. */
+  printedPackSize: string | null
+  /** Pack size carried by the matched lexicon entry, if any. */
+  lexiconPackSize: string | null
+  /** True when the displayed name is the printed text rather than the lexicon's. */
+  nameKeptAsPrinted: boolean
+  /** Why the displayed name looks the way it does, for the evidence panel. */
+  nameNote: string
   /** Human-readable signals, in the order they were applied. */
   signals: string[]
 }
 
 export interface ResolvedItem {
-  /** Canonical name when matched, otherwise the cleaned OCR name unchanged. */
+  /**
+   * What to show. The canonical lexicon name when it agrees with every fact the
+   * photo printed, otherwise the read name unchanged.
+   */
   name: string
   pricePaise: number
   category: string
@@ -45,6 +57,66 @@ export interface ResolvedItem {
 const MATCH_THRESHOLD = 0.62
 /** Above this the top match is treated as decided even if a runner-up is close. */
 const DECISIVE_MARGIN = 0.08
+/**
+ * How close the lexicon name has to be to the printed text, once both have had
+ * their pack size removed, before its spelling is used instead. High on purpose:
+ * this is only meant to fix "Colgato" into "Colgate", never to turn
+ * "Britannia Bread" into a different product's name.
+ */
+const SPELLING_THRESHOLD = 0.88
+
+/**
+ * Chooses the name shown on screen.
+ *
+ * The rule is that the photo owns every fact it states. The lexicon still
+ * decides what the row *is* — its category, its id, its price band — but it
+ * never gets to restate a printed pack size as a different one, and it never
+ * gets to add a pack size the card did not print. Those two moves are what make
+ * an otherwise correct read look invented.
+ */
+function chooseName(printed: string, canonical: string): { name: string; note: string; keptAsPrinted: boolean } {
+  const printedPack = readPackSize(printed)
+  const lexiconPack = readPackSize(canonical)
+
+  if (printedPack && !samePackSize(printedPack, lexiconPack)) {
+    return {
+      name: printed,
+      keptAsPrinted: true,
+      note: lexiconPack
+        ? `kept the printed “${printedPack.text}” — the lexicon entry reads “${lexiconPack.text}”`
+        : `kept the printed “${printedPack.text}” — the lexicon entry states no pack size`,
+    }
+  }
+
+  if (!printedPack && lexiconPack) {
+    const withoutPack = stripPackSize(canonical)
+    if (withoutPack && editSimilarity(printed, withoutPack) >= SPELLING_THRESHOLD) {
+      return {
+        name: withoutPack,
+        keptAsPrinted: false,
+        note: `lexicon spelling, without its “${lexiconPack.text}” — the photo printed no pack size`,
+      }
+    }
+    return {
+      name: printed,
+      keptAsPrinted: true,
+      note: `no pack size printed, so the lexicon’s “${lexiconPack.text}” was not added`,
+    }
+  }
+
+  // Neither side states a pack size the other contradicts. A read name that is
+  // longer than our entry is carrying detail worth keeping (a brand the lexicon
+  // does not list); otherwise the canonical spelling is the better rendering of
+  // the same thing.
+  const printedIsMoreSpecific = printed.length > canonical.length + 4
+  return {
+    name: printedIsMoreSpecific ? printed : canonical,
+    keptAsPrinted: printedIsMoreSpecific,
+    note: printedIsMoreSpecific
+      ? 'kept as printed — more specific than the lexicon name'
+      : 'lexicon name, which states the same pack size that was printed',
+  }
+}
 
 function slugify(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'item'
@@ -56,6 +128,10 @@ function slugify(value: string): string {
  * The read price is never overwritten and an unmatched row is never dropped or
  * renamed to something plausible: it is kept exactly as read, marked unmatched,
  * and its confidence is lowered so the merchant reviews it.
+ *
+ * A match is also not allowed to restate the printed pack size — see
+ * `chooseName` — so a card reading "Surf Excel 1 kg" is never shown as the
+ * lexicon's "500 g".
  */
 export function resolveItems(parsed: ParsedItem[]): ResolvedItem[] {
   const usedIds = new Set<string>()
@@ -79,6 +155,10 @@ export function resolveItems(parsed: ParsedItem[]): ResolvedItem[] {
     let suggestedId = slugify(item.name)
     let bandFit: number | null = null
     let band: string | null = null
+    const printedPack = readPackSize(item.name)
+    let lexiconPack: string | null = null
+    let nameKeptAsPrinted = true
+    let nameNote = 'kept exactly as read'
 
     if (best) {
       const margin = runnerUp ? best.breakdown.score - runnerUp.breakdown.score : 1
@@ -99,9 +179,14 @@ export function resolveItems(parsed: ParsedItem[]): ResolvedItem[] {
         signals.push(`close call with ${runnerUp.candidate.name}`)
       }
 
-      // Only adopt the canonical name when the read name is not already more
-      // specific; a shelf label with a real pack size beats our generic entry.
-      name = item.name.length > best.candidate.name.length + 4 ? item.name : best.candidate.name
+      const chosen = chooseName(item.name, best.candidate.name)
+      name = chosen.name
+      nameKeptAsPrinted = chosen.keptAsPrinted
+      nameNote = chosen.note
+      lexiconPack = readPackSize(best.candidate.name)?.text ?? null
+      signals.push(`name: ${chosen.note}`)
+      // The lexicon still supplies identity even when it does not supply the
+      // name, so stock and restock can recognise the row later.
       category = best.candidate.category
       suggestedId = best.candidate.id
     } else {
@@ -136,6 +221,10 @@ export function resolveItems(parsed: ParsedItem[]): ResolvedItem[] {
         priceBand: band,
         priceBandFit: bandFit,
         ocrConfidencePct: Number.isFinite(ocrConfidencePct) ? ocrConfidencePct : item.confidencePct,
+        printedPackSize: printedPack?.text ?? null,
+        lexiconPackSize: lexiconPack,
+        nameKeptAsPrinted,
+        nameNote,
         signals,
       },
     }

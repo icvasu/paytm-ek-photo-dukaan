@@ -53,6 +53,28 @@ describe('parseCatalogLines', () => {
     for (const entry of result.rejected) expect(entry.reason).toBeTruthy()
   })
 
+  it('recovers a row whose pack size OCR ran into the word before it', () => {
+    // The real read of the shipped rate card: "Atta 5 kg" came back as "Atta5kg",
+    // which has the shape of a reference code and used to lose the whole row.
+    const result = parseCatalogLines(lines('Aashirvaad Atta5kg 295', 'Lays 52g 20', 'Fortune Oil 1L 140'))
+    expect(result.items.map((entry) => entry.name)).toEqual([
+      'Aashirvaad Atta 5 kg', 'Lays 52 g', 'Fortune Oil 1 L',
+    ])
+    expect(result.items.map((entry) => entry.pricePaise)).toEqual([29500, 2000, 14000])
+  })
+
+  it('still refuses reference codes that only look like a glued pack size', () => {
+    const result = parseCatalogLines(lines(
+      // A GSTIN carries a digit-then-G, but the G is followed by more characters,
+      // so it is not a unit and this row stays rejected.
+      'GSTIN 29ABCDE1234G1Z5 500',
+      'Ref UTR8823401192KG 250',
+      'Invoice AB123456 400',
+    ))
+    expect(result.items).toHaveLength(0)
+    expect(result.rejected).toHaveLength(3)
+  })
+
   it('returns nothing for a photo with no price-like text', () => {
     const result = parseCatalogLines(lines(
       'HAPPY BIRTHDAY',
