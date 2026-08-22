@@ -460,7 +460,7 @@ function DukaanManagePage() {
   const needsAttention = catalog.items.filter((item) => !item.available || item.stockFlag === 'low')
   const forecasts = buildStockForecasts(data)
   const reorderForecasts = forecasts.filter((forecast) => forecast.needsReorder)
-  const latestOrder = data.supplierOrders[0]
+  const latestOrder = data.supplierOrders?.[0]
   const shareText = `Namaste! ${data.merchant.businessName} ka digital price list dekhiye: ${link}\n${available.slice(0, 4).map((item) => `${item.name} – ${formatINR(item.pricePaise)}`).join('\n')}\nAvailability may change.`
   const copy = async (value: string, label: string) => {
     try {
