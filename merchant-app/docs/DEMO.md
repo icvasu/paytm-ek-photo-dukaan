@@ -34,7 +34,7 @@ Four samples ship with the app, in two groups that make **opposite** claims. Say
 
 | Sample | Use it for | What actually happens |
 | --- | --- | --- |
-| **Photo of a printed rate card** | Proving OCR is real without borrowing a judge's phone | 13 lines read at **94%** mean text confidence, **11 of 12** rows kept, all 11 prices exactly as printed. Measure it yourself with `node server/verifySamplePhotoOcr.mjs`. |
+| **Photo of a printed rate card** | Proving OCR is real without borrowing a judge's phone | 13 lines read at **94%** mean text confidence, **all 12** priced rows kept and matched, every price exactly as printed. The one skipped line is the card's own heading, which has no price. Measure it yourself with `node server/verifySamplePhotoOcr.mjs`. |
 | **Photo of a cluttered shelf** | Proving the app refuses to invent items | **Zero** lines of text. Ends in the no-text refusal state. This is the honest-failure demo, not a bug. |
 
 The seeded merchant is **Meena Kirana & General Store** (owner Meena Reddy), so the kirana shelf is also the consistent story.
@@ -112,7 +112,7 @@ Without those Redis environment variables, catalog edits and demo payments are k
 
 - Tap **Photo of a cluttered shelf** → OCR finds no text at all and the scan screen refuses and explains, rather than inventing rows. This is the one-tap version of the check below, and it needs no props.
 - Upload a photo with no readable price lines → same refusal. There is no silent fallback catalog.
-- Tap **Photo of a printed rate card**, then open **How this was read from your photo** on Manage → engine, 13 lines, rows kept, rows skipped, and the skipped row's reason. The one skipped row is real: OCR ran "Atta 5 kg" together as `Atta5kg`, which the name filter rejects as a reference code. Say so if a judge counts 11 rows against 12 on the card — the price ₹295 was read correctly, the *name* was refused.
+- Tap **Photo of a printed rate card**, then open **How this was read from your photo** on Manage → engine, 13 lines read, 12 priced rows kept, 1 skipped with its reason. The skipped line is the card's heading, `MEENA KIRANA - RATE CARD`, which carries no price; nothing priced was dropped. Row 5 is the one to point at: OCR returned `Aashirvaad Atta5kg 295` and the printed pack size is allowed to outrank the lexicon, so it resolves to **Aashirvaad Atta 5 kg** at ₹295 with the raw text shown beside it. If a judge counts rows, the answer is 12 of 12.
 - Try an amount with no exact basket → the attribution card says so and asks the merchant to pick. It does not guess.
 - Try ₹45 on the **printed rate card** catalog → 8 baskets, 28% confidence, alternates listed. Useful as a deliberate demonstration of ambiguity.
 - Delete a catalog row → the toast offers **Undo** for five seconds and nothing reaches the API until it expires. Destructive taps are recoverable, which is the difference between an editor a shopkeeper trusts and one she stops using.

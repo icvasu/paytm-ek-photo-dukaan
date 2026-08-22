@@ -20,10 +20,13 @@ No, and the field does not claim to be. It is labelled **App payment reference**
 Three paths, labelled differently on the same screen. **Sample shops** are fixtures — rows we wrote next to a drawing (use one for the judged run, because it is repeatable). A **photo the merchant takes** runs tesseract.js on the device, no upload. And two **sample photos** run that identical function on photographs that ship with the app, with no fixture to fall back on. Printed type only; handwriting is out of scope.
 
 **Prove the OCR is real without using my phone.**
-Tap **Photo of a printed rate card**. It reads 13 lines at 94% mean text confidence and keeps 11 of the 12 printed rows, every price exactly as printed. Then tap **Photo of a cluttered shelf**: zero lines, and the app refuses instead of producing a catalog. Same code path, opposite outcome — that pair is the honesty claim. `node server/verifySamplePhotoOcr.mjs` reprints both results from the shipped assets.
+Tap **Photo of a printed rate card**. It reads 13 lines at 94% mean text confidence and keeps all 12 printed rows, every price exactly as printed. Then tap **Photo of a cluttered shelf**: zero lines, and the app refuses instead of producing a catalog. Same code path, opposite outcome — that pair is the honesty claim. `node server/verifySamplePhotoOcr.mjs` reprints both results from the shipped assets.
 
-**Why 11 rows and not 12?**
-OCR ran "Aashirvaad Atta 5 kg" together as `Atta5kg`, and the name filter rejects a 6+ character run mixing letters and digits because that is what a GSTIN or a bank reference looks like. The price ₹295 was read correctly; the name was refused. We would rather drop a row we cannot name than show a row we guessed, and it is visible in **How this was read from your photo** with the reason attached.
+**13 lines but 12 rows — what did you drop?**
+The card's heading, `MEENA KIRANA - RATE CARD`, which has no price on it. It is listed in the evidence panel with exactly that reason, so the arithmetic is checkable rather than asserted. Nothing priced was dropped.
+
+**Did anything need rescuing?**
+Yes, and it is worth showing. OCR ran the pack size into the word before it and returned `Aashirvaad Atta5kg 295`. A run of letters and digits like that is normally refused, because it is the shape of a GSTIN or a bank reference — but the printed pack size is allowed to outrank the lexicon, so it resolves to **Aashirvaad Atta 5 kg** at ₹295. The panel shows the raw `read as` text next to the resolved name, so a judge can see the repair rather than take it on trust.
 
 **Why not a live vision model?**
 A judged demo cannot depend on an API key or a network. The adapter seam is `VisionService` / `analyzePhoto`. Production VLM can replace the engine; the merchant-edit + API catalog stay.
