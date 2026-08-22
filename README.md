@@ -98,9 +98,6 @@ Do not say "Paytm is live" or "the model learned today."
 | --- | --- |
 | [`docs/PITCH.html`](merchant-app/docs/PITCH.html) | 16:9 pitch deck — open in a browser |
 | [`docs/DEMO.md`](merchant-app/docs/DEMO.md) | Full walkthrough, sample-by-sample, with API smoke checks |
-| [`docs/SPEAKER_SCRIPT.md`](merchant-app/docs/SPEAKER_SCRIPT.md) | The 5 minutes, timed, with the words to say |
-| [`docs/MENTOR_CUE_CARD.md`](merchant-app/docs/MENTOR_CUE_CARD.md) | One page to hold while presenting — run order, the six numbers, recovery lines |
-| [`docs/JUDGE_DEFENSE.md`](merchant-app/docs/JUDGE_DEFENSE.md) | Hostile questions, honest answers |
 | [`docs/EXPLAIN_SIMPLE.md`](merchant-app/docs/EXPLAIN_SIMPLE.md) | The whole thing in plain words |
 | [`docs/FEATURES.md`](merchant-app/docs/FEATURES.md) | Every user-facing feature, REAL vs SIMULATED |
 | [`docs/ARCHITECTURE.md`](merchant-app/docs/ARCHITECTURE.md) | Photo → catalog → QR → restock |
