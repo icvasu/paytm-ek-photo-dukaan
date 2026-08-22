@@ -22,7 +22,7 @@ import { formatDayLabel, formatTime } from './lib/dates'
 import type { PaymentMethod, Transaction } from './types/models'
 import { demoVisionService } from './services/vision/VisionService'
 import { buildStockForecasts } from './intelligence/engine'
-import type { BasketLine, CatalogItem } from './types/models'
+import type { BasketLine, CatalogItem, DukaanCatalog } from './types/models'
 
 const methodName: Record<PaymentMethod, string> = {
   upi: 'UPI', paytm_wallet: 'Paytm Wallet', card: 'Card', netbanking: 'Net banking',
@@ -556,8 +556,29 @@ function DukaanManagePage() {
 function PublicDukaanPage() {
   const { slug } = useParams()
   const data = useData()
-  const catalog = data.catalog
-  if (!catalog || catalog.slug !== slug) return <><PageHeader title="Digital Dukaan" /><main className="page"><EmptyState icon={<Store />} title="Dukaan unavailable" text="This demo catalog is missing or was reset." /></main></>
+  const [catalog, setCatalog] = useState<DukaanCatalog | null>(
+    data.catalog?.slug === slug ? data.catalog : null,
+  )
+  const [catalogStatus, setCatalogStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  useEffect(() => {
+    const controller = new AbortController()
+    void fetch(`/api/dukaan/${encodeURIComponent(slug ?? '')}`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Dukaan not found')
+        return response.json() as Promise<DukaanCatalog>
+      })
+      .then((value) => {
+        setCatalog(value)
+        setCatalogStatus('ready')
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        setCatalogStatus('error')
+      })
+    return () => controller.abort()
+  }, [slug])
+  if (catalogStatus === 'loading' && !catalog) return <><PageHeader title="Digital Dukaan" /><main className="page centered"><div className="spinner" /><h1>Opening digital dukaan</h1><p>Loading the latest catalog…</p></main></>
+  if (!catalog || catalog.slug !== slug || catalogStatus === 'error') return <><PageHeader title="Digital Dukaan" /><main className="page"><EmptyState icon={<Store />} title="Dukaan unavailable" text="This demo catalog could not be loaded." /></main></>
   const rows = catalog.items.filter((item) => item.available)
   return <>
     <PageHeader title="Digital Dukaan" />

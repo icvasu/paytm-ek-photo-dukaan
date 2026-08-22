@@ -3,18 +3,75 @@ import type { Plugin } from 'vite'
 import { buildSeed } from '../src/data/seed.js'
 import { buildInsights } from '../src/intelligence/engine.js'
 import { buildDraftTransaction, DemoPaytmService, applyChargeToDraft } from '../src/services/paytm/PaytmService.js'
+import { MEENA_SHELF_ITEMS } from '../src/services/vision/VisionService.js'
 import { createId } from '../src/lib/ids.js'
 import type {
   BasketLine, CatalogItem, CollectPaymentInput, MerchantStoreData, SupplierProfile, VisionResult,
 } from '../src/types/models.js'
 
-let db: MerchantStoreData = buildSeed()
+const demoGlobal = globalThis as typeof globalThis & { __paytmEkPhotoDukaanState?: MerchantStoreData }
+let db: MerchantStoreData = demoGlobal.__paytmEkPhotoDukaanState ?? buildSeed()
+demoGlobal.__paytmEkPhotoDukaanState = db
 const processor = new DemoPaytmService(700)
+const STORE_KEY = 'paytm-ek-photo-dukaan:demo-state:v1'
+
+function redisConfig() {
+  const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL
+  const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN
+  return url && token ? { url: url.replace(/\/$/, ''), token } : null
+}
+
+async function redisCommand(command: string[]) {
+  const config = redisConfig()
+  if (!config) return null
+  const response = await fetch(config.url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${config.token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(command),
+  })
+  const payload = await response.json() as { result?: unknown; error?: string }
+  if (!response.ok || payload.error) throw new Error(payload.error ?? 'Shared demo store request failed')
+  return payload.result
+}
+
+async function loadSharedState() {
+  if (!redisConfig()) return
+  const result = await redisCommand(['GET', STORE_KEY])
+  if (typeof result !== 'string') return
+  db = JSON.parse(result) as MerchantStoreData
+  demoGlobal.__paytmEkPhotoDukaanState = db
+}
+
+async function saveSharedState() {
+  if (!redisConfig()) return
+  await redisCommand(['SET', STORE_KEY, JSON.stringify(db)])
+}
+
+function seedPublicCatalog() {
+  if (db.catalog) return db.catalog
+  db.catalog = {
+    id: 'dukaan_meena',
+    merchantId: db.merchant.id,
+    title: 'Meena Kirana Digital Dukaan',
+    slug: 'meena-kirana',
+    items: MEENA_SHELF_ITEMS.map((item) => ({ ...item })),
+    sourceImageName: 'meena-kirana-shelf-demo.jpg',
+    sourceKind: 'demo',
+    confidence: 'high',
+    readingNote: 'Seeded DEMO catalog for public phone scans. Stock is a visual range, not an exact count.',
+    createdAt: db.demoClock,
+    updatedAt: db.demoClock,
+  }
+  return db.catalog
+}
 
 function json(res: ServerResponse, status: number, value: unknown) {
   res.statusCode = status
   res.setHeader('Content-Type', 'application/json')
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173')
+  res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
   res.end(JSON.stringify(value))
@@ -30,11 +87,18 @@ async function body(req: IncomingMessage) {
   return chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {}
 }
 
-async function api(req: IncomingMessage, res: ServerResponse) {
+async function routeDemoApi(req: IncomingMessage, res: ServerResponse) {
   if (req.method === 'OPTIONS') return json(res, 204, null)
   const url = new URL(req.url ?? '/', 'http://localhost')
   const path = url.pathname
-  if (req.method === 'GET' && path === '/api/health') return json(res, 200, { ok: true, mode: 'demo', official: false })
+  if (req.method === 'GET' && path === '/api/health') {
+    return json(res, 200, {
+      ok: true,
+      mode: 'demo',
+      official: false,
+      persistence: redisConfig() ? 'shared-redis' : 'instance-memory-with-public-seed',
+    })
+  }
   if (req.method === 'GET' && path === '/api/merchant') return json(res, 200, db.merchant)
   if (req.method === 'GET' && path === '/api/transactions') return json(res, 200, db.transactions)
   if (req.method === 'GET' && path.startsWith('/api/transactions/')) {
@@ -55,7 +119,8 @@ async function api(req: IncomingMessage, res: ServerResponse) {
   if (req.method === 'GET' && path === '/api/basket-assignments') return json(res, 200, db.basketAssignments)
   if (req.method === 'GET' && path.startsWith('/api/dukaan/')) {
     const slug = path.split('/').pop()
-    return json(res, db.catalog?.slug === slug ? 200 : 404, db.catalog?.slug === slug ? db.catalog : { error: 'Dukaan not found' })
+    const catalog = slug === 'meena-kirana' ? seedPublicCatalog() : db.catalog
+    return json(res, catalog?.slug === slug ? 200 : 404, catalog?.slug === slug ? catalog : { error: 'Dukaan not found' })
   }
   if (req.method === 'POST' && path === '/api/catalog') {
     const input = await body(req) as VisionResult & { sourceImageName?: string }
@@ -303,9 +368,17 @@ async function api(req: IncomingMessage, res: ServerResponse) {
   }
   if (req.method === 'POST' && path === '/api/reset') {
     db = buildSeed()
+    demoGlobal.__paytmEkPhotoDukaanState = db
     return json(res, 200, { ok: true })
   }
   return json(res, 404, { error: 'Demo API route not found' })
+}
+
+export async function handleDemoApi(req: IncomingMessage, res: ServerResponse) {
+  await loadSharedState()
+  await routeDemoApi(req, res)
+  const path = new URL(req.url ?? '/', 'http://localhost').pathname
+  if (req.method !== 'GET' || path.startsWith('/api/dukaan/')) await saveSharedState()
 }
 
 export function demoApiPlugin(): Plugin {
@@ -314,7 +387,7 @@ export function demoApiPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use('/api', (req, res) => {
         req.url = `/api${req.url ?? ''}`
-        void api(req, res).catch((error) => json(res, 500, { error: error instanceof Error ? error.message : 'Demo API error' }))
+        void handleDemoApi(req, res).catch((error) => json(res, 500, { error: error instanceof Error ? error.message : 'Demo API error' }))
       })
     },
   }

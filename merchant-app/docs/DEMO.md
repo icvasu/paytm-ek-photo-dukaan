@@ -2,7 +2,7 @@
 
 **Unofficial prototype** — simulated payments and demo vision. Not official Paytm.
 
-Phone-width browser (DevTools responsive, ~390px) looks like the merchant app. Use `http://localhost:5173` after `npm run dev` from `merchant-app/`.
+Phone-width browser (DevTools responsive, ~390px) looks like the merchant app. Use `http://localhost:5173` after `npm run dev` from `merchant-app/`, or the production Vercel URL.
 
 The hero path is **one photo → digital dukaan**. Merchant payments are the existing shell and seeded signal source, not the opening pitch.
 
@@ -49,6 +49,16 @@ curl -s http://localhost:5173/api/insights
 ```
 
 `health` should include `"official": false` (demo).
+
+## Vercel and phone QR
+
+Deploy from `merchant-app/` with `npx vercel --prod`. Vercel serves the Vite build and the catch-all Node function in `api/[...path].ts`; that function reuses the same handler as local Vite development.
+
+For durable cross-device edits, connect an Upstash Redis integration in the Vercel project. The API automatically uses either `KV_REST_API_URL` + `KV_REST_API_TOKEN` or `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`. `/api/health` reports `persistence: "shared-redis"` when configured.
+
+The price-list QR, copied link, and WhatsApp draft are built at runtime from `window.location.origin`, so a production QR points at the current Vercel domain rather than localhost. A phone opening `/#/dukaan/meena-kirana` fetches `/api/dukaan/meena-kirana` in its own browser. On a cold serverless instance, that endpoint seeds the same 12-item Meena Kirana DEMO catalog.
+
+Without those Redis environment variables, catalog edits and demo payments are kept on `globalThis` for the lifetime of a warm serverless instance. They can reset or differ across concurrent instances. The public phone route always remains demoable through the seeded cold-start catalog, but do not claim durable cross-device edits unless `/api/health` says `shared-redis`.
 
 ---
 

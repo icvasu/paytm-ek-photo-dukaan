@@ -1,9 +1,10 @@
-import type { CatalogItem, SupplierProfile, VisionResult } from '../../types/models'
+import type { CatalogItem, SupplierProfile, VisionResult } from '../../types/models.ts'
 
 export interface VisionInput {
   fileName: string
   fileSize: number
   imageType: string
+  fileHash?: string
 }
 
 export interface VisionService {
@@ -11,7 +12,7 @@ export interface VisionService {
   analyzeInvoice(input: VisionInput): Promise<Omit<SupplierProfile, 'id' | 'lastStockInAt'>>
 }
 
-const meenaShelf: CatalogItem[] = [
+export const MEENA_SHELF_ITEMS: CatalogItem[] = [
   item('tata-salt', 'Tata Salt 1 kg', 2800, 'in_stock', '12–18 packs', 'Staples'),
   item('aashirvaad', 'Aashirvaad Atta 5 kg', 29500, 'low', '2–4 bags', 'Staples'),
   item('toor-dal', 'Toor Dal 1 kg', 16800, 'in_stock', '8–12 packs', 'Pulses'),
@@ -22,6 +23,8 @@ const meenaShelf: CatalogItem[] = [
   item('thums-up', 'Thums Up 750 ml', 4500, 'low', '2–3 bottles', 'Drinks'),
   item('amul-milk', 'Amul Taaza Milk 500 ml', 2900, 'out', 'Missing today', 'Dairy'),
   item('surf-excel', 'Surf Excel Easy Wash 500 g', 7800, 'in_stock', '6–9 packs', 'Home care'),
+  item('sugar', 'Madhur Sugar 1 kg', 5200, 'in_stock', '8–10 packs', 'Staples'),
+  item('lifebuoy', 'Lifebuoy Soap 125 g', 3800, 'in_stock', '10–12 bars', 'Personal care'),
 ]
 
 const counterList: CatalogItem[] = [
@@ -55,41 +58,58 @@ function copyItems(items: CatalogItem[]) {
 }
 
 function delay(ms: number) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms))
+  return new Promise((resolve) => globalThis.setTimeout(resolve, ms))
 }
 
 export class DemoVisionService implements VisionService {
+  private readonly catalogCache = new Map<string, VisionResult>()
+  private readonly invoiceCache = new Map<string, Omit<SupplierProfile, 'id' | 'lastStockInAt'>>()
+
   async analyze(input: VisionInput): Promise<VisionResult> {
+    const cacheKey = input.fileHash ? `${input.fileHash}:${input.fileName.toLowerCase()}` : ''
+    const cached = cacheKey ? this.catalogCache.get(cacheKey) : undefined
+    if (cached) return { ...cached, items: copyItems(cached.items) }
+
     await delay(350)
     const key = input.fileName.toLowerCase()
     if (key.includes('counter') || key.includes('rate') || key.includes('tea')) {
-      return {
+      const result: VisionResult = {
         items: copyItems(counterList),
         confidence: 'high',
-        readingNote: 'Demo mapping recognised a printed counter list. Prices are seeded, not production OCR.',
+        readingNote: 'Demo mapping recognised a printed counter list. Cached by image hash; prices are seeded, not production OCR.',
         sourceKind: 'demo',
       }
+      if (cacheKey) this.catalogCache.set(cacheKey, result)
+      return { ...result, items: copyItems(result.items) }
     }
     if (key.includes('meena') || key.includes('shelf') || key.includes('kirana')) {
-      return {
-        items: copyItems(meenaShelf),
+      const result: VisionResult = {
+        items: copyItems(MEENA_SHELF_ITEMS),
         confidence: 'high',
-        readingNote: 'Demo mapping recognised the Meena Kirana shelf. Stock is a visual range, not an exact count.',
+        readingNote: 'Demo mapping recognised the Meena Kirana shelf. Cached by image hash; stock is a visual range, not an exact count.',
         sourceKind: 'demo',
       }
+      if (cacheKey) this.catalogCache.set(cacheKey, result)
+      return { ...result, items: copyItems(result.items) }
     }
     const looksLikeImage = input.imageType.startsWith('image/')
-    return {
-      items: copyItems(meenaShelf.slice(0, input.fileSize > 1_000_000 ? 10 : 7)),
+    const result: VisionResult = {
+      items: copyItems(MEENA_SHELF_ITEMS.slice(0, input.fileSize > 1_000_000 ? 10 : 7)),
       confidence: 'starter',
       readingNote: looksLikeImage
-        ? 'Prices could not be reliably read in demo mode. We created an editable starter list from visual shelf cues.'
+        ? 'Prices could not be reliably read in demo mode. We cached an editable starter list by image hash.'
         : 'This file could not be read as an image. An editable starter list was created instead.',
       sourceKind: 'upload',
     }
+    if (cacheKey) this.catalogCache.set(cacheKey, result)
+    return { ...result, items: copyItems(result.items) }
   }
 
   async analyzeInvoice(input: VisionInput): Promise<Omit<SupplierProfile, 'id' | 'lastStockInAt'>> {
+    const cacheKey = input.fileHash ? `${input.fileHash}:${input.fileName.toLowerCase()}` : ''
+    const cached = cacheKey ? this.invoiceCache.get(cacheKey) : undefined
+    if (cached) return { ...cached, lines: cached.lines.map((line) => ({ ...line })) }
+
     await delay(350)
     const key = input.fileName.toLowerCase()
     const teaInvoice = (key.includes('tea') || key.includes('counter')) && !key.includes('meena') && !key.includes('kirana') && !key.includes('shelf')
@@ -107,15 +127,17 @@ export class DemoVisionService implements VisionService {
           { skuId: 'amul-milk', itemName: 'Amul Taaza Milk 500 ml', quantity: 30, unitCostPaise: 2450 },
         ]
     const invoiceTotalPaise = lines.reduce((sum, line) => sum + line.quantity * line.unitCostPaise, 0)
-    return {
+    const result = {
       name: teaInvoice ? 'Sharma Traders' : 'Sri Balaji Distributors',
       phone: '+91 98765 44110',
       sourceImageName: input.fileName,
       lines,
       invoiceTotalPaise,
       normalOrderPaise: invoiceTotalPaise,
-      disclosure: 'DEMO invoice heuristic: filename mapping, not production OCR. Merchant approval is required.',
+      disclosure: 'DEMO invoice heuristic cached by image hash: filename mapping, not production OCR. Merchant approval is required.',
     }
+    if (cacheKey) this.invoiceCache.set(cacheKey, result)
+    return { ...result, lines: result.lines.map((line) => ({ ...line })) }
   }
 }
 
