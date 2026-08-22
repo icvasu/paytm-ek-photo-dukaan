@@ -279,6 +279,13 @@
   font-size: var(--fs-label);
 }
 
+/* Sets up what the read will do before it runs, so an empty result reads as the
+   product working rather than as a broken sample. Wraps instead of truncating:
+   the caveat is the point of the line. */
+.sample-card .sample-hint {
+  text-wrap: pretty;
+}
+
 .sample-card > svg {
   flex-shrink: 0;
   width: var(--icon-md);
@@ -486,14 +493,17 @@
   background: var(--color-surface-sunken);
 }
 
+/* Product names are the one thing that must never truncate, so the stock tag
+   wraps to its own line rather than squeezing the field. */
 .item-top {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
 }
 
 .item-top > input {
-  flex: 1;
+  flex: 1 1 100%;
   min-width: 0;
   min-height: var(--tap);
   padding: 0 var(--space-2);
@@ -511,9 +521,9 @@
 }
 
 .item-top > input:focus {
-  border-color: var(--brand-cyan);
+  border-color: var(--brand-navy);
   background: var(--color-surface);
-  box-shadow: 0 0 0 3px rgb(0 186 242 / 22%);
+  box-shadow: 0 0 0 4px rgb(0 186 242 / 45%);
 }
 
 .stock-tag {

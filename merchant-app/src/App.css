@@ -1214,8 +1214,8 @@
 .filters select:focus,
 .form-field select:focus,
 .form-field input:focus {
-  border-color: var(--brand-cyan);
-  box-shadow: 0 0 0 3px rgb(0 186 242 / 22%);
+  border-color: var(--brand-navy);
+  box-shadow: 0 0 0 4px rgb(0 186 242 / 45%);
 }
 
 .result-label {
@@ -1717,6 +1717,12 @@
 
 .qr-page {
   text-align: center;
+}
+
+/* The QR card centres itself; form controls below it read left-aligned. */
+.qr-page .form-field,
+.qr-page .alert {
+  text-align: left;
 }
 
 /* Real UPI intent QR, shared by the merchant QR screen and the storefront. */
