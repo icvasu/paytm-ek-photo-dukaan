@@ -4,6 +4,15 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Ek Photo Dukaan · Paytm AI Hackathon</title>
+<!--
+  Self-contained and fully offline: no webfonts, no CDN, no external script.
+  Every image is a relative path inside docs/. Numbers on these slides were
+  reprinted from the app on the day of the pitch:
+    node server/verifySamplePhotoOcr.mjs   -> 13 lines, 94% mean confidence, 12 rows kept
+    node server/verifyJudgePath.mjs        -> 40 passed, 0 failed
+    npx vitest run                         -> 155 tests, 12 files
+    solveBasket(4500, MEENA_SHELF_ITEMS)   -> 14 combinations, 1 basket, 92%
+-->
 <style>
   :root {
     --navy: #012b72;
@@ -12,13 +21,13 @@
     --ink: #0a1628;
     --paper: #f4f7fb;
     --line: rgba(255, 255, 255, .16);
-    --muted: rgba(255, 255, 255, .62);
-    --font: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --num: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, monospace;
+    --muted: rgba(255, 255, 255, .64);
+    --amber: #ffb84d;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --num: ui-monospace, Menlo, Consolas, monospace;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
   html, body { height: 100%; }
 
   body {
@@ -27,17 +36,11 @@
     color: #fff;
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
   }
 
-  /* ---------- stage: a fixed 16:9 box scaled to fit any screen ---------- */
-
-  #stage {
-    position: fixed;
-    inset: 0;
-    display: grid;
-    place-items: center;
-  }
+  /* A fixed 16:9 stage scaled to fit, so type never reflows between the laptop
+     it was written on and the screen it is shown on. */
+  #stage { position: fixed; inset: 0; display: grid; place-items: center; }
 
   #deck {
     position: relative;
@@ -52,7 +55,7 @@
   .slide {
     position: absolute;
     inset: 0;
-    padding: 96px 112px;
+    padding: 72px 92px;
     display: none;
     flex-direction: column;
     background: linear-gradient(155deg, var(--navy) 0%, var(--navy-deep) 62%, #000d26 100%);
@@ -60,7 +63,6 @@
 
   .slide.on { display: flex; }
 
-  /* A soft cyan bloom keeps the flat navy from reading like a template. */
   .slide::after {
     content: "";
     position: absolute;
@@ -69,124 +71,100 @@
     width: 780px;
     height: 780px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(0, 186, 242, .22) 0%, rgba(0, 186, 242, 0) 68%);
+    background: radial-gradient(circle, rgba(0, 186, 242, .2) 0%, rgba(0, 186, 242, 0) 68%);
     pointer-events: none;
   }
 
   .slide > * { position: relative; z-index: 1; }
 
-  .slide.light {
-    background: linear-gradient(160deg, #fff 0%, var(--paper) 100%);
-    color: var(--ink);
-  }
-
+  .slide.light { background: linear-gradient(160deg, #fff 0%, var(--paper) 100%); color: var(--ink); }
   .slide.light::after { background: radial-gradient(circle, rgba(1, 43, 114, .09) 0%, rgba(1, 43, 114, 0) 68%); }
 
   /* ---------- type ---------- */
 
   .eyebrow {
-    font-size: 22px;
-    font-weight: 650;
+    font-size: 21px;
+    font-weight: 700;
     letter-spacing: .16em;
     text-transform: uppercase;
     color: var(--cyan);
-    margin-bottom: 34px;
+    margin-bottom: 22px;
   }
 
   .light .eyebrow { color: #0a63a8; }
 
-  h1 {
-    font-size: 118px;
-    line-height: .94;
-    font-weight: 800;
-    letter-spacing: -.035em;
-  }
-
-  h2 {
-    font-size: 86px;
-    line-height: 1.02;
-    font-weight: 780;
-    letter-spacing: -.03em;
-  }
+  h1 { font-size: 112px; line-height: .95; font-weight: 800; letter-spacing: -.035em; }
+  h2 { font-size: 66px; line-height: 1.04; font-weight: 800; letter-spacing: -.03em; }
 
   .lede {
-    font-size: 38px;
-    line-height: 1.38;
-    font-weight: 420;
+    font-size: 33px;
+    line-height: 1.36;
+    font-weight: 400;
     color: var(--muted);
-    max-width: 22ch;
-    margin-top: 36px;
+    max-width: 30ch;
+    margin-top: 26px;
   }
 
   .light .lede { color: #46566c; }
-
-  .wide { max-width: 34ch; }
-
+  .wide { max-width: 42ch; }
   .cyan { color: var(--cyan); }
   .light .cyan { color: #0079b8; }
+  .amber { color: var(--amber); }
   .num { font-family: var(--num); font-feature-settings: "tnum" 1; letter-spacing: -.02em; }
-
   .fill { flex: 1; }
 
   .foot {
-    font-size: 21px;
-    color: rgba(255, 255, 255, .42);
+    font-size: 20px;
+    color: rgba(255, 255, 255, .48);
     line-height: 1.5;
-    max-width: 92ch;
-    margin-top: 40px;
+    max-width: 108ch;
+    margin-top: 26px;
   }
 
   .light .foot { color: #6a7889; }
+  .foot b { color: rgba(255, 255, 255, .8); font-weight: 650; }
+  .light .foot b { color: #2c3c52; }
 
-  /* ---------- slide 1 ---------- */
-
-  .title-slide { justify-content: center; }
+  /* ---------- title ---------- */
 
   .logo {
     display: inline-flex;
     align-items: baseline;
-    gap: 2px;
-    font-size: 30px;
+    font-size: 28px;
     font-weight: 800;
     letter-spacing: -.02em;
-    margin-bottom: 64px;
+    margin-bottom: 40px;
   }
 
   .logo span { color: var(--cyan); }
   .logo b { color: #fff; }
 
   .logo small {
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 500;
     color: var(--muted);
-    margin-left: 12px;
-    letter-spacing: .04em;
+    margin-left: 14px;
+    letter-spacing: .05em;
   }
 
-  .title-slide h1 { font-size: 148px; }
-
-  .track {
-    margin-top: 72px;
-    display: flex;
-    gap: 14px;
-    flex-wrap: wrap;
-  }
+  .track { margin-top: 40px; display: flex; gap: 12px; flex-wrap: wrap; }
 
   .chip {
     border: 1px solid var(--line);
     border-radius: 100px;
-    padding: 12px 26px;
-    font-size: 20px;
-    font-weight: 560;
-    color: rgba(255, 255, 255, .82);
+    padding: 11px 24px;
+    font-size: 19px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, .84);
   }
 
   .chip.solid { background: var(--cyan); border-color: var(--cyan); color: #002544; }
+  .light .chip { border-color: rgba(1, 43, 114, .2); color: #2c3c52; }
 
-  /* ---------- big stat ---------- */
+  /* ---------- stats ---------- */
 
   .stat {
-    font-size: 250px;
+    font-size: 172px;
     line-height: .84;
     font-weight: 800;
     letter-spacing: -.05em;
@@ -196,178 +174,163 @@
     -webkit-text-fill-color: transparent;
   }
 
-  .stat-row { display: flex; align-items: flex-end; gap: 56px; }
+  .metrics { display: flex; gap: 64px; margin-top: 34px; flex-wrap: wrap; }
+  .metric .big { font-size: 74px; font-weight: 800; letter-spacing: -.04em; color: var(--cyan); line-height: 1; }
+  .metric .cap { font-size: 19px; color: var(--muted); margin-top: 12px; max-width: 20ch; line-height: 1.4; }
 
-  /* ---------- flow (slide 3) ---------- */
-
-  .flow {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr auto 1fr;
-    align-items: center;
-    gap: 30px;
-    margin-top: 62px;
-  }
+  /* ---------- cards ---------- */
 
   .card {
     border: 1px solid var(--line);
-    border-radius: 22px;
-    padding: 34px 32px;
+    border-radius: 20px;
+    padding: 28px 26px;
     background: rgba(255, 255, 255, .05);
-    min-height: 268px;
   }
 
-  .card h3 {
-    font-size: 27px;
-    font-weight: 700;
-    letter-spacing: -.01em;
-    margin-bottom: 16px;
-  }
-
-  .card p { font-size: 20px; line-height: 1.5; color: var(--muted); }
+  .card h3 { font-size: 25px; font-weight: 750; letter-spacing: -.01em; margin-bottom: 12px; line-height: 1.15; }
+  .card p { font-size: 19px; line-height: 1.48; color: var(--muted); }
 
   .card .tag {
-    display: inline-block;
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: .12em;
+    display: block;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: .13em;
     text-transform: uppercase;
     color: var(--cyan);
-    margin-bottom: 18px;
+    margin-bottom: 14px;
   }
 
-  .card.hot { background: rgba(0, 186, 242, .13); border-color: rgba(0, 186, 242, .42); }
+  .card.hot { background: rgba(0, 186, 242, .13); border-color: rgba(0, 186, 242, .45); }
+  .card.warn { background: rgba(255, 184, 77, .1); border-color: rgba(255, 184, 77, .38); }
+  .card.warn .tag { color: var(--amber); }
 
-  .arrow { font-size: 42px; color: var(--cyan); font-weight: 300; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 30px; align-items: stretch; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 30px; align-items: stretch; }
 
-  /* Four equal cards with no arrows between them, so they must share a top edge
-     rather than centring individually at their own heights. */
-  .grid4 {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    align-items: stretch;
-    gap: 24px;
-    margin-top: 58px;
+  /* ---------- the loop (slide 3) ---------- */
+
+  .loopwrap { margin-top: 34px; display: flex; flex-direction: column; gap: 18px; }
+  .loop-row { display: grid; grid-template-columns: 1fr 40px 1fr 40px 1fr 40px 1fr; align-items: center; gap: 0; }
+
+  .node {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 20px 18px;
+    background: rgba(255, 255, 255, .05);
+    min-height: 138px;
   }
 
-  ul.rows { margin-top: 12px; list-style: none; }
+  .node .n { font-family: var(--num); font-size: 15px; font-weight: 700; color: var(--cyan); letter-spacing: .1em; }
+  .node h4 { font-size: 22px; font-weight: 750; letter-spacing: -.015em; margin: 8px 0 8px; line-height: 1.14; }
+  .node p { font-size: 16px; line-height: 1.38; color: var(--muted); }
+
+  /* The two Paytm touchpoints are the sensor and the actuator. They carry the
+     argument of the whole slide, so they are the only filled nodes. */
+  .node.paytm { background: rgba(0, 186, 242, .16); border-color: rgba(0, 186, 242, .55); }
+  .node.paytm .n { color: #fff; }
+
+  .arw { text-align: center; font-size: 30px; color: var(--cyan); font-weight: 300; line-height: 1; }
+
+  .returnbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-top: 2px dashed rgba(0, 186, 242, .5);
+    padding-top: 14px;
+    font-size: 19px;
+    color: var(--muted);
+  }
+
+  .returnbar .loopback { color: var(--cyan); font-weight: 750; letter-spacing: .04em; white-space: nowrap; }
+
+  /* ---------- rows / tables ---------- */
+
+  ul.rows { list-style: none; margin-top: 6px; }
 
   ul.rows li {
     display: flex;
     justify-content: space-between;
-    gap: 18px;
+    gap: 16px;
     font-size: 19px;
-    padding: 9px 0;
+    padding: 10px 0;
     border-bottom: 1px solid rgba(255, 255, 255, .1);
-    color: rgba(255, 255, 255, .86);
+    color: rgba(255, 255, 255, .88);
   }
 
   ul.rows li:last-child { border: 0; }
-  ul.rows li i { font-style: normal; color: var(--cyan); font-family: var(--num); }
+  ul.rows li i { font-style: normal; color: var(--cyan); font-family: var(--num); font-weight: 700; }
 
-  /* ---------- loop (slide 4) ---------- */
-
-  .loop {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 26px;
-    margin-top: 58px;
-  }
-
-  .step { border-top: 3px solid var(--cyan); padding-top: 26px; }
-
-  .step .n {
-    font-family: var(--num);
-    font-size: 17px;
-    color: var(--cyan);
-    font-weight: 700;
-    letter-spacing: .1em;
-  }
-
-  .step h3 {
-    font-size: 31px;
-    font-weight: 740;
-    letter-spacing: -.02em;
-    margin: 14px 0 14px;
-    line-height: 1.12;
-  }
-
-  .step p { font-size: 19px; line-height: 1.5; color: var(--muted); }
-
-  /* ---------- honest scope (slide 6) ---------- */
-
-  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 46px; margin-top: 54px; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 42px; margin-top: 28px; }
 
   .col h3 {
-    font-size: 25px;
-    font-weight: 760;
-    letter-spacing: .04em;
+    font-size: 23px;
+    font-weight: 800;
+    letter-spacing: .05em;
     text-transform: uppercase;
-    padding-bottom: 18px;
+    padding-bottom: 14px;
     border-bottom: 2px solid;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
 
-  .col.real h3 { color: var(--cyan); border-color: rgba(0, 186, 242, .4); }
-  .col.sim h3 { color: #ffb84d; border-color: rgba(255, 184, 77, .38); }
+  .col.real h3 { color: var(--cyan); border-color: rgba(0, 186, 242, .42); }
+  .col.sim h3 { color: var(--amber); border-color: rgba(255, 184, 77, .4); }
 
   .col li {
     list-style: none;
-    font-size: 21px;
-    line-height: 1.42;
-    padding: 15px 0;
+    font-size: 20px;
+    line-height: 1.4;
+    padding: 13px 0;
     border-bottom: 1px solid rgba(255, 255, 255, .08);
     color: rgba(255, 255, 255, .88);
   }
 
   .col li:last-child { border: 0; }
+  .col li b { color: #fff; font-weight: 700; }
 
-  /* ---------- close ---------- */
+  /* ---------- screenshots ---------- */
 
-  .close-slide { justify-content: center; }
-  .close-slide h2 { font-size: 88px; max-width: 30ch; }
+  .shots { display: flex; gap: 26px; align-items: flex-start; margin-top: 26px; }
 
-  .ask {
-    margin-top: 64px;
-    display: flex;
-    gap: 18px;
-    align-items: center;
-    flex-wrap: wrap;
+  .shot {
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, .18);
+    background: #000;
+    display: block;
+    height: 420px;
+    width: auto;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, .45);
   }
+
+  .shot.tall { height: 470px; }
+  .shotcap { font-size: 16px; color: rgba(255, 255, 255, .5); margin-top: 10px; max-width: 24ch; line-height: 1.36; }
+  .shotcol { display: flex; flex-direction: column; }
+
+  .withshot { display: grid; grid-template-columns: 1fr auto; gap: 52px; align-items: start; }
 
   /* ---------- chrome ---------- */
 
-  #bar {
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    height: 5px;
-    background: var(--cyan);
-    z-index: 5;
-    transition: width .32s cubic-bezier(.2, .7, .2, 1);
-  }
+  #bar { position: absolute; left: 0; bottom: 0; height: 5px; background: var(--cyan); z-index: 5; transition: width .3s ease; }
 
   #count {
     position: absolute;
-    right: 44px;
-    bottom: 34px;
+    right: 40px;
+    bottom: 28px;
     font-family: var(--num);
-    font-size: 17px;
+    font-size: 16px;
     color: rgba(255, 255, 255, .34);
     z-index: 4;
     letter-spacing: .08em;
   }
 
-  .slide.light.on ~ #count { color: rgba(10, 22, 40, .3); }
-
   #hint {
     position: fixed;
     left: 50%;
-    bottom: 18px;
+    bottom: 16px;
     transform: translateX(-50%);
     font-size: 13px;
     letter-spacing: .09em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, .3);
+    color: rgba(255, 255, 255, .32);
     z-index: 20;
     transition: opacity .6s;
     pointer-events: none;
@@ -375,64 +338,52 @@
 
   #hint.gone { opacity: 0; }
 
-  /* Entrance: children rise in sequence so each slide lands rather than cuts. */
-  .slide.on > *:not(#bar):not(#count) {
-    animation: rise .58s cubic-bezier(.16, .84, .28, 1) backwards;
-  }
+  .slide.on > *:not(#bar):not(#count) { animation: rise .5s cubic-bezier(.16, .84, .28, 1) backwards; }
+  .slide.on > *:nth-child(1) { animation-delay: .03s; }
+  .slide.on > *:nth-child(2) { animation-delay: .09s; }
+  .slide.on > *:nth-child(3) { animation-delay: .15s; }
+  .slide.on > *:nth-child(4) { animation-delay: .21s; }
+  .slide.on > *:nth-child(5) { animation-delay: .27s; }
+  .slide.on > *:nth-child(6) { animation-delay: .33s; }
 
-  .slide.on > *:nth-child(1) { animation-delay: .04s; }
-  .slide.on > *:nth-child(2) { animation-delay: .11s; }
-  .slide.on > *:nth-child(3) { animation-delay: .18s; }
-  .slide.on > *:nth-child(4) { animation-delay: .25s; }
-  .slide.on > *:nth-child(5) { animation-delay: .32s; }
-  .slide.on > *:nth-child(6) { animation-delay: .39s; }
-
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(22px); }
-    to { opacity: 1; transform: none; }
-  }
+  @keyframes rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
 
   @media (prefers-reduced-motion: reduce) {
     .slide.on > * { animation: none; }
     #bar { transition: none; }
   }
 
-  /* Phone: drop the fixed stage and let slides flow full width. */
+  @media print {
+    body { overflow: visible; background: #fff; }
+    #stage { position: static; display: block; }
+    #deck { width: 100%; height: auto; transform: none !important; box-shadow: none; }
+    .slide, .slide.on { display: flex; position: static; page-break-after: always; min-height: 900px; }
+    .slide.on > * { animation: none; }
+    #hint, #bar, #count { display: none; }
+  }
+
+  /* Phone: one scrollable document instead of a paged deck. */
   @media (max-width: 820px) {
     body { overflow: auto; }
     #stage { position: static; display: block; }
-
-    #deck {
-      width: 100%;
-      height: auto;
-      transform: none !important;
-      box-shadow: none;
-    }
-
-    /* On a phone the deck becomes one scrollable document. Keyboard paging is
-       meaningless there, so every slide is visible instead of hidden. */
-    .slide, .slide.on {
-      display: flex;
-      position: static;
-      padding: 44px 26px 52px;
-      min-height: 100vh;
-    }
-
+    #deck { width: 100%; height: auto; transform: none !important; box-shadow: none; }
+    .slide, .slide.on { display: flex; position: static; padding: 40px 22px 48px; min-height: 100vh; }
     .slide.on > * { animation: none; }
-
-    h1, .title-slide h1 { font-size: 46px; }
-    h2, .close-slide h2 { font-size: 36px; }
-    .lede { font-size: 20px; margin-top: 20px; max-width: none; }
-    .stat { font-size: 96px; }
-    .stat-row { flex-direction: column; align-items: flex-start; gap: 20px; }
-    .eyebrow { font-size: 14px; margin-bottom: 18px; }
-    .flow, .grid4, .loop, .split { grid-template-columns: 1fr; gap: 18px; }
-    .arrow { display: none; }
-    .card { min-height: 0; padding: 22px; }
-    .card h3, .step h3 { font-size: 22px; }
-    .card p, .step p, .col li, ul.rows li { font-size: 16px; }
-    .foot { font-size: 14px; }
-    .chip { font-size: 14px; padding: 9px 18px; }
+    h1 { font-size: 44px; }
+    h2 { font-size: 32px; }
+    .lede { font-size: 19px; margin-top: 18px; max-width: none; }
+    .stat { font-size: 84px; }
+    .metric .big { font-size: 46px; }
+    .eyebrow { font-size: 14px; margin-bottom: 16px; }
+    .grid3, .grid4, .split, .withshot { grid-template-columns: 1fr; gap: 16px; }
+    .loop-row { grid-template-columns: 1fr; gap: 12px; }
+    .arw { display: none; }
+    .shots { flex-direction: column; }
+    .shot, .shot.tall { height: auto; width: 100%; max-width: 320px; }
+    .card h3, .node h4 { font-size: 20px; }
+    .card p, .node p, .col li, ul.rows li, .shotcap { font-size: 16px; }
+    .foot { font-size: 15px; }
+    .chip { font-size: 14px; padding: 9px 16px; }
     #count, #hint, #bar { display: none; }
   }
 </style>
@@ -442,187 +393,396 @@
 <div id="stage">
   <div id="deck">
 
-    <!-- 1 ------------------------------------------------------------------ -->
-    <section class="slide title-slide">
-      <div class="logo"><span>pay</span><b>tm</b><small>AI Hackathon · Hyderabad</small></div>
-      <h1>Ek Photo<br />Dukaan</h1>
-      <p class="lede wide">Photograph the shelf once. After that, the payments you
-        already take keep the stock register.</p>
-      <div class="track">
-        <span class="chip solid">Theme 2 · AI for Small Businesses</span>
-        <span class="chip">Working prototype, live in a minute</span>
-        <span class="chip">Independent build · not affiliated with Paytm</span>
-      </div>
-    </section>
-
-    <!-- 2 ------------------------------------------------------------------ -->
+    <!-- 1 · the problem -------------------------------------------------- -->
     <section class="slide">
-      <div class="eyebrow">The reason every inventory app fails</div>
-      <div class="stat-row">
-        <div class="stat num">400</div>
-        <div>
-          <h2 style="font-size:58px">items on Meena's<br />shelves.</h2>
-        </div>
-      </div>
-      <p class="lede wide">Every app starts by asking her to type all of them.
-        At twenty seconds each that is two hours she does not have, and prices
-        change, so it is never done once.</p>
+      <div class="logo"><span>pay</span><b>tm</b><small>AI Hackathon &middot; Hyderabad &middot; Theme 2, AI for Small Businesses</small></div>
+      <div class="eyebrow">Ek Photo Dukaan &middot; the problem</div>
+      <h2>A shopkeeper does not know<br />what sold today, or what is<br />about to run out &mdash; and nobody<br />will type 200 products into an app.</h2>
+      <p class="lede wide">Both halves matter. The knowing is the need. The typing is
+        why every inventory app she has been shown is still empty.</p>
       <div class="fill"></div>
-      <p class="foot">She is not lazy. Data entry is a second job that pays nothing.
-        So she guesses, and on Saturday evening the Thums Up is gone before she notices.</p>
+      <p class="foot">At twenty seconds a product, a 200&#8209;line catalog is over an hour of
+        unpaid data entry &mdash; and prices change, so it is never done once. She is not lazy.
+        Data entry is a second job that pays nothing. So she guesses, and on Saturday evening
+        the Thums Up is gone before she notices.</p>
     </section>
 
-    <!-- 3 ------------------------------------------------------------------ -->
+    <!-- 2 · the idea ----------------------------------------------------- -->
     <section class="slide">
-      <div class="eyebrow">Setup</div>
-      <h2>One photo. No typing.</h2>
-      <div class="flow">
-        <div class="card">
-          <span class="tag">Input</span>
-          <h3>A photo of the shelf</h3>
-          <p>Or the rate card already taped to the wall. Taken on her own phone,
-            read on her own phone.</p>
+      <div class="eyebrow">The idea</div>
+      <div class="withshot">
+        <div>
+          <h2>One photo.<br />No typing.</h2>
+          <p class="lede">She photographs the shelf, or the rate card already taped to her
+            wall. OCR runs <b class="cyan">on her own phone</b> and the lines become named
+            items with prices, which she can edit.</p>
+          <p class="lede">Out the other side: a digital catalog, a shareable storefront,
+            and a UPI QR.</p>
+          <div class="track">
+            <span class="chip solid">Zero keyboard onboarding</span>
+            <span class="chip">Nothing leaves the phone</span>
+          </div>
         </div>
-        <div class="arrow">&rarr;</div>
-        <div class="card hot">
-          <span class="tag">On device</span>
-          <h3>Text becomes a catalog</h3>
-          <p>OCR reads the lines, then fuzzy matching turns them into named items
-            with prices. Nothing leaves the phone.</p>
+        <div class="shots">
+          <div class="shotcol">
+            <img class="shot tall" src="screens/journey-02-scan.png" alt="Scan screen: take a photo, sample shops, sample photos" />
+            <p class="shotcap">Photograph it, or read a sample photo for real</p>
+          </div>
+          <div class="shotcol">
+            <img class="shot tall" src="screens/journey-03-manage-populated.png" alt="Manage screen with the catalog read out of the photo" />
+            <p class="shotcap">Catalog, editable. The merchant is the source of truth</p>
+          </div>
         </div>
-        <div class="arrow">&rarr;</div>
-        <div class="card">
-          <span class="tag">Output</span>
-          <h3>A live dukaan</h3>
-          <ul class="rows">
-            <li>Tata Salt 1 kg <i>28</i></li>
-            <li>Parle-G 250 g <i>25</i></li>
-            <li>Thums Up 750 ml <i>45</i></li>
-            <li>Fortune Oil 1 L <i>142</i></li>
+      </div>
+    </section>
+
+    <!-- 3 · the loop ----------------------------------------------------- -->
+    <section class="slide">
+      <div class="eyebrow">The loop &mdash; money in is the sensor, money out is the action</div>
+      <h2 style="font-size:52px">Photographing the shelf starts it.<br />The payments she already takes keep it running.</h2>
+      <div class="loopwrap">
+        <div class="loop-row">
+          <div class="node">
+            <div class="n">01</div>
+            <h4>Photo</h4>
+            <p>Shelf or rate card, on her own phone.</p>
+          </div>
+          <div class="arw">&rarr;</div>
+          <div class="node">
+            <div class="n">02</div>
+            <h4>Catalog</h4>
+            <p>OCR + fuzzy match. She edits and confirms.</p>
+          </div>
+          <div class="arw">&rarr;</div>
+          <div class="node paytm">
+            <div class="n">03 &middot; PAYTM</div>
+            <h4>Storefront + UPI QR</h4>
+            <p>A real <span class="num">upi://pay</span> intent customers can scan.</p>
+          </div>
+          <div class="arw">&rarr;</div>
+          <div class="node paytm">
+            <div class="n">04 &middot; PAYTM &middot; SENSOR</div>
+            <h4>A payment arrives</h4>
+            <p>&#8377;45. An amount, not a scan. Nothing was rung up.</p>
+          </div>
+        </div>
+        <div class="loop-row">
+          <div class="node">
+            <div class="n">08 &middot; PAYTM &middot; ACTION</div>
+            <h4>Pay the supplier</h4>
+            <p>Bill photographed, order drafted, payout fires.</p>
+          </div>
+          <div class="arw">&larr;</div>
+          <div class="node">
+            <div class="n">07</div>
+            <h4>Restock predicted</h4>
+            <p>Weighted demand &rarr; days of cover &rarr; reorder.</p>
+          </div>
+          <div class="arw">&larr;</div>
+          <div class="node">
+            <div class="n">06</div>
+            <h4>Stock decrements</h4>
+            <p>Only after she taps confirm. Never on a guess.</p>
+          </div>
+          <div class="arw">&larr;</div>
+          <div class="node hot" style="background:rgba(0,186,242,.16);border-color:rgba(0,186,242,.55)">
+            <div class="n">05 &middot; INFERENCE</div>
+            <h4>Which items sold?</h4>
+            <p>Solve for the basket that sums to exactly &#8377;45.</p>
+          </div>
+        </div>
+        <div class="returnbar">
+          <span class="loopback">&#8635; and round again</span>
+          <span>Restocking changes the shelf, the next payment measures it, and the register
+            stays current without her typing a single line.</span>
+        </div>
+      </div>
+      <div class="fill"></div>
+      <p class="foot">Remove Paytm and this diagram has <b>no input and no output</b>: no QR to
+        take the money, no amount stream to infer from, and nothing to pay the supplier with.
+        It is not a catalog app that happens to sit next to payments.</p>
+    </section>
+
+    <!-- 4 · OCR proof ---------------------------------------------------- -->
+    <section class="slide">
+      <div class="eyebrow">Live proof &mdash; measured today, on the photo that ships with the app</div>
+      <div class="withshot">
+        <div>
+          <h2 style="font-size:56px">Real OCR, real numbers,<br />and a real refusal.</h2>
+          <div class="metrics">
+            <div class="metric">
+              <div class="big num">94%</div>
+              <div class="cap">mean text confidence across 13 lines read</div>
+            </div>
+            <div class="metric">
+              <div class="big num">12 / 12</div>
+              <div class="cap">priced rows kept, every price exactly as printed</div>
+            </div>
+            <div class="metric">
+              <div class="big num">0</div>
+              <div class="cap">lines on the cluttered shelf photo &mdash; so it refuses</div>
+            </div>
+          </div>
+          <ul class="rows" style="margin-top:22px;max-width:640px">
+            <li>Thums Up 750 ml <i>&#8377;45 &middot; 84%</i></li>
+            <li>Aashirvaad Atta 5 kg <i>&#8377;295 &middot; 88%</i></li>
+            <li>Red Label Tea 250 g <i>&#8377;135 &middot; 76%</i></li>
+            <li>Britannia Bread <i>&#8377;45 &middot; 95%</i></li>
           </ul>
         </div>
-      </div>
-      <div class="fill"></div>
-      <p class="foot">Plus a public price list and a scannable UPI QR, so the same photo
-        that built her catalog also gets her paid.</p>
-    </section>
-
-    <!-- 4 ------------------------------------------------------------------ -->
-    <section class="slide">
-      <div class="eyebrow">The part nobody else can copy</div>
-      <h2>Payments keep<br />the register.</h2>
-      <div class="loop">
-        <div class="step">
-          <div class="n">01</div>
-          <h3>A customer pays &#8377;45</h3>
-          <p>A number, not a scan. No item was rung up.</p>
-        </div>
-        <div class="step">
-          <div class="n">02</div>
-          <h3>We solve for the basket</h3>
-          <p>Search every combination of her prices that sums to exactly &#8377;45.
-            Fourteen searched, one fits.</p>
-        </div>
-        <div class="step">
-          <div class="n">03</div>
-          <h3>She confirms in one tap</h3>
-          <p>The model proposes. The shopkeeper decides. Stock never moves on a guess.</p>
-        </div>
-        <div class="step">
-          <div class="n">04</div>
-          <h3>The shelf estimate drops</h3>
-          <p>Thums Up goes from two to three left, down to one to two, with two days
-            of cover.</p>
+        <div class="shots">
+          <div class="shotcol">
+            <img class="shot tall" src="screens/journey-03-manage-populated.png" alt="Catalog read out of the rate-card photograph" />
+            <p class="shotcap">Every row carries its own confidence, and skipped lines carry a reason</p>
+          </div>
         </div>
       </div>
       <div class="fill"></div>
-      <p class="foot">Amount alone can never prove a basket, so confidence is capped at
-        92 percent and every suggestion shows its runners up. That honesty is what makes
-        the number usable.</p>
+      <p class="foot">The honest detail: <b>13 lines were read and one was dropped</b> &mdash; the
+        card's own heading, <span class="num">MEENA KIRANA - RATE CARD</span>, because it has no
+        price on it. The name filter also refuses GST&#8209;number&#8209;shaped strings, which is
+        why <span class="num">GSTIN 27AAAPL1234C</span> can never become a product. The same code path
+        on a cluttered shelf photograph returns zero lines and stops, instead of inventing a catalog.
+        Reprint all of it with <b class="num">node server/verifySamplePhotoOcr.mjs</b>.</p>
     </section>
 
-    <!-- 5 ------------------------------------------------------------------ -->
+    <!-- 5 · the ₹45 moment ----------------------------------------------- -->
     <section class="slide">
-      <div class="eyebrow">Why this has to be Paytm</div>
-      <h2>Swap out Paytm and<br />the product disappears.</h2>
+      <div class="eyebrow">The &#8377;45 moment &mdash; the part nobody else can copy</div>
+      <div class="withshot">
+        <div>
+          <h2 style="font-size:56px">The payment tells us<br />what left the shelf.</h2>
+          <p class="lede" style="max-width:44ch;margin-top:20px">Her prices are known. The amount
+            is known. So ask the only question left: <b class="cyan">which combination of her own
+            prices adds up to exactly &#8377;45?</b></p>
+          <div class="metrics" style="gap:52px;margin-top:30px">
+            <div class="metric"><div class="big num">12</div><div class="cap">items in the catalog</div></div>
+            <div class="metric"><div class="big num">14</div><div class="cap">combinations searched</div></div>
+            <div class="metric"><div class="big num">1</div><div class="cap">exact&#8209;sum basket found</div></div>
+            <div class="metric"><div class="big num">92%</div><div class="cap">confidence &mdash; the hard ceiling</div></div>
+          </div>
+          <p class="lede" style="font-size:27px;max-width:46ch;margin-top:26px">One bottle of Thums Up.
+            She taps confirm, and the shelf estimate drops.</p>
+        </div>
+        <div class="shots">
+          <div class="shotcol">
+            <img class="shot tall" src="screens/journey-10-payment-detail-basket.png" alt="Payment detail showing the inferred basket for the 45 rupee payment" />
+            <p class="shotcap">&ldquo;What did this customer buy?&rdquo; &mdash; proposed, not applied</p>
+          </div>
+        </div>
+      </div>
+      <div class="fill"></div>
+      <p class="foot">In plain words that is <b>subset&#8209;sum</b>: try the combinations, keep the ones
+        that land on the exact total, rank them by what a real basket looks like &mdash; few items,
+        small quantities, things this shop has actually sold before. An amount can never <i>prove</i> a
+        basket, so confidence is capped at 92%, runners&#8209;up are listed, and <b>stock only moves after
+        she confirms</b>. On an ambiguous catalog &#8377;45 yields eight baskets and confidence falls to 28%,
+        and we will show you that on purpose.</p>
+    </section>
+
+    <!-- 6 · AI innovation ------------------------------------------------ -->
+    <section class="slide">
+      <div class="eyebrow">AI innovation &mdash; four components, all running, all explainable</div>
+      <h2 style="font-size:58px">The intelligence is in refusing<br />to answer when it cannot know.</h2>
       <div class="grid4">
         <div class="card">
-          <span class="tag">Sensor</span>
-          <h3>Paytm QR and soundbox</h3>
-          <p>The amount stream. This is the only place stock going out is observed
-            without asking her to type.</p>
+          <span class="tag">01 &middot; Perception</span>
+          <h3>On&#8209;device OCR</h3>
+          <p>tesseract.js in the browser. Greyscale and contrast&#8209;stretched first. No upload,
+            no API key, no server. Per&#8209;line confidence is surfaced, not hidden.</p>
         </div>
         <div class="card">
-          <span class="tag">Cold start</span>
-          <h3>Paytm for Business camera</h3>
-          <p>Shelf and supplier bill read on device, inside an app she already opens
-            every morning.</p>
+          <span class="tag">02 &middot; Resolution</span>
+          <h3>Fuzzy match to a lexicon</h3>
+          <p>&ldquo;Aashinvaad Atta 5kg&rdquo; resolves to the real product. The lexicon
+            <b>re&#8209;spells</b> what was printed; it never adds a product the photo did not show.
+            No match means the row is kept exactly as read.</p>
         </div>
         <div class="card hot">
-          <span class="tag">Inference</span>
-          <h3>Basket solver</h3>
-          <p>Turns amounts into units sold, bounded by what the supplier bill says
-            actually came in.</p>
+          <span class="tag">03 &middot; Inference</span>
+          <h3>Bounded subset&#8209;sum</h3>
+          <p>Exhaustive DFS over price points: max 4 distinct items, 24 units, a
+            250,000&#8209;node budget so the UI cannot hang. Softmax over a plausibility cost turns
+            candidates into probabilities.</p>
         </div>
         <div class="card">
-          <span class="tag">Action</span>
-          <h3>Paytm vendor payout</h3>
-          <p>Reorder is a real payment to a real supplier, drafted on WhatsApp where
-            the order already happens.</p>
+          <span class="tag">04 &middot; Prediction</span>
+          <h3>Weighted demand</h3>
+          <p>Exponentially weighted units&#8209;per&#8209;day from confirmed baskets gives days of
+            cover and the reorder list. Capped at 85%, because on&#8209;hand was estimated from a
+            photograph, never counted.</p>
         </div>
       </div>
       <div class="fill"></div>
-      <p class="foot">A standalone catalog app has no sensor and no way to act. It would
-        ask her to type her sales, which is the product we are refusing to build.</p>
+      <p class="foot">Every one of these <b>declines rather than guesses</b>: no text found means no
+        catalog; a GST&#8209;shaped string is never a product name; no exact sum means &ldquo;add the
+        items by hand&rdquo;; several exact sums means the merchant picks. Rule&#8209;based and
+        auditable end to end &mdash; every number on screen opens a panel that shows how it was
+        produced, which is the only version of AI a shopkeeper will keep using after week one.</p>
     </section>
 
-    <!-- 6 ------------------------------------------------------------------ -->
+    <!-- 7 · Paytm integration -------------------------------------------- -->
     <section class="slide">
-      <div class="eyebrow">What we will not pretend</div>
-      <h2>Built today, and<br />mocked today.</h2>
+      <div class="eyebrow">Paytm integration &mdash; structural, not decorative</div>
+      <h2 style="font-size:58px">Money in is the sensor.<br />Money out is the action.</h2>
+      <div class="grid3">
+        <div class="card hot">
+          <span class="tag">Sensor &middot; money in</span>
+          <h3>The QR and the amount stream</h3>
+          <p>The only place stock leaving the shelf is observed without asking her to type.
+            The QR is a genuine NPCI <span class="num">upi://pay</span> intent &mdash; scan it on
+            your own phone during the demo and it opens a real payment app with the amount filled.</p>
+        </div>
+        <div class="card hot">
+          <span class="tag">Action &middot; money out</span>
+          <h3>The supplier payout</h3>
+          <p>The prediction is worthless if acting on it needs a second app. Reorder ends in a
+            payment to a real supplier, from inside the app that already holds her money.</p>
+        </div>
+        <div class="card">
+          <span class="tag">The seam</span>
+          <h3>One interface to swap</h3>
+          <p><span class="num">PaytmService</span> has three implementations: demo, our API, and
+            <span class="num">LivePaytmService</span>. Going live is that file, a webhook route and
+            one line in the container &mdash; documented call&#8209;by&#8209;call in
+            <span class="num">PAYTM_INTEGRATION.md</span>.</p>
+        </div>
+      </div>
+      <ul class="rows" style="margin-top:26px;max-width:1180px">
+        <li><span>Production webhook, already designed: <span class="num">POST /api/paytm/webhook</span></span> <i>verify checksum &rarr; match our tr &rarr; assert amount &rarr; idempotent on txnId &rarr; solve basket &rarr; unambiguous auto&#8209;attributes, ambiguous waits for her tap &rarr; 200</i></li>
+      </ul>
+      <div class="fill"></div>
+      <p class="foot">The <span class="num">tr</span> reference we already generate for every dynamic
+        QR is the join key that makes step two possible &mdash; it links a QR we rendered to a webhook
+        we later receive. <b>A standalone catalog app has no sensor and no actuator.</b> It would have
+        to ask her to type her sales, which is the product we are refusing to build.</p>
+    </section>
+
+    <!-- 8 · user impact -------------------------------------------------- -->
+    <section class="slide">
+      <div class="eyebrow">User impact</div>
+      <div class="withshot">
+        <div>
+          <h2 style="font-size:58px">Onboarding is a camera<br />shutter, not a keyboard.</h2>
+          <div class="grid3" style="grid-template-columns:1fr;gap:16px;margin-top:26px;max-width:660px">
+            <div class="card">
+              <h3>Zero typing to start</h3>
+              <p>One photo replaces an hour of data entry. Editing a wrong price is one tap,
+                and deletes are undoable for five seconds.</p>
+            </div>
+            <div class="card">
+              <h3>Works for low&#8209;literacy merchants</h3>
+              <p>Photograph, look, tap. Quantities are honest ranges &mdash; &ldquo;about 2&ndash;3
+                left&rdquo; &mdash; never a fake integer. Status is shown by shape and number, never
+                by colour alone.</p>
+            </div>
+            <div class="card">
+              <h3>No new hardware, no new habit</h3>
+              <p>Her phone, her existing QR, inside an app she already opens every morning.
+                Nothing to buy, nothing to install, no staff training.</p>
+            </div>
+          </div>
+        </div>
+        <div class="shots">
+          <div class="shotcol">
+            <img class="shot tall" src="screens/journey-12-storefront.png" alt="Public storefront a customer sees, with the pay button" />
+            <p class="shotcap">What her customer sees</p>
+          </div>
+          <div class="shotcol">
+            <img class="shot tall" src="screens/journey-13-insights.png" alt="Insights screen with stock ranges and days of cover" />
+            <p class="shotcap">What she sees on Saturday evening</p>
+          </div>
+        </div>
+      </div>
+      <div class="fill"></div>
+      <p class="foot"><b>We have no pilot data, and we are not going to imply otherwise.</b> The pilot
+        we would run: 30 kirana stores on live Paytm QR for eight weeks, half with the feature and
+        half without, each starting from one photograph. The metric is
+        <b>stockout days per fast&#8209;moving SKU</b> &mdash; days a top&#8209;20 item was
+        unavailable &mdash; with catalog completeness after week one and share of payments the
+        merchant attributes as the leading indicators. That is the number the feature has to move.</p>
+    </section>
+
+    <!-- 9 · build feasibility -------------------------------------------- -->
+    <section class="slide">
+      <div class="eyebrow">Build feasibility &mdash; it already runs, and it is cheap to run</div>
+      <h2 style="font-size:58px">Marginal AI cost per merchant:<br />zero.</h2>
+      <div class="grid4">
+        <div class="card">
+          <span class="tag">Unit economics</span>
+          <h3>The inference is on her phone</h3>
+          <p>OCR runs in the merchant's browser. No GPU, no per&#8209;call model spend, no
+            inference bill that grows with merchant count &mdash; and it keeps working when the
+            venue Wi&#8209;Fi does not.</p>
+        </div>
+        <div class="card">
+          <span class="tag">No data moat needed</span>
+          <h3>Rule&#8209;based and explainable</h3>
+          <p>No training data, no labelling, no model to retrain per city or language.
+            The solver's bounds and costs are read in source, not learned &mdash; so a wrong
+            answer is diagnosable instead of mysterious.</p>
+        </div>
+        <div class="card hot">
+          <span class="tag">Verified today</span>
+          <h3>155 tests &middot; 40/40 checks</h3>
+          <p><span class="num">155</span> tests across 12 files, plus a 40&#8209;check harness that
+            walks the exact judged path end to end, including adversarial amounts and rejected input.
+            <span class="num">node server/verifyJudgePath.mjs</span> &mdash; 40 passed, 0 failed.</p>
+        </div>
+        <div class="card">
+          <span class="tag">Distribution</span>
+          <h3>A feature, not an app</h3>
+          <p>Ships inside Paytm for Business, which merchants already open daily. No new
+            download, no new login, no acquisition cost. Public repo, deployed and live right now.</p>
+        </div>
+      </div>
+      <div class="track" style="margin-top:26px">
+        <span class="chip solid">github.com/icvasu/paytm-ek-photo-dukaan</span>
+        <span class="chip">merchant-app-black.vercel.app</span>
+        <span class="chip">React + TypeScript &middot; tesseract.js &middot; Vercel</span>
+      </div>
+      <div class="fill"></div>
+      <p class="foot">Scoped honestly: this build targets a <b>10&ndash;15 item</b> catalog the owner
+        can review in one sitting, not a 2,000&#8209;SKU supermarket. Printed type, not handwriting.
+        Those are the next two pieces of work, not hidden failures.</p>
+    </section>
+
+    <!-- 10 · honest limits + close --------------------------------------- -->
+    <section class="slide light">
+      <div class="eyebrow">What is real, and what we deliberately did not fake</div>
+      <h2 style="font-size:56px;color:var(--ink)">We could have mocked the whole thing.<br />We mocked exactly one layer, and labelled it.</h2>
       <div class="split">
-        <div class="col real">
-          <h3>Real and running</h3>
+        <div class="col real" style="color:var(--ink)">
+          <h3 style="color:#0079b8;border-color:rgba(0,121,184,.3)">Real and running</h3>
           <ul>
-            <li>OCR on device, no server, no model key</li>
-            <li>Bounded subset sum basket solver with audited search counts</li>
-            <li>UPI intent QR to the NPCI <span class="num">upi://pay</span> spec.
-              Scan it on your own phone</li>
-            <li>API backed catalog, stock and supplier orders that survive a refresh</li>
-            <li>WhatsApp draft that opens with the order written</li>
+            <li style="color:#2c3c52;border-color:rgba(1,43,114,.12)"><b>On&#8209;device OCR</b> &mdash; tesseract.js, no upload, no key</li>
+            <li style="color:#2c3c52;border-color:rgba(1,43,114,.12)"><b>Bounded subset&#8209;sum solver</b> with audited search counts</li>
+            <li style="color:#2c3c52;border-color:rgba(1,43,114,.12)"><b>NPCI <span class="num">upi://pay</span> QR</b> &mdash; scan it on your own phone</li>
+            <li style="color:#2c3c52;border-color:rgba(1,43,114,.12)"><b>API&#8209;backed catalog, stock and orders</b> that survive a refresh</li>
+            <li style="color:#2c3c52;border-color:rgba(1,43,114,.12)"><b>WhatsApp share</b> &mdash; opens real WhatsApp on a <span class="num">wa.me</span> link with the message written; the merchant presses send</li>
           </ul>
         </div>
         <div class="col sim">
-          <h3>Simulated, and labelled</h3>
+          <h3 style="color:#b5741a;border-color:rgba(181,116,26,.32)">Simulated, and labelled on screen</h3>
           <ul>
-            <li>Paytm order and settlement webhooks</li>
-            <li>WhatsApp Cloud API delivery</li>
-            <li>Production grade vision model</li>
-            <li>Calibrated forecasting. Today it is a weighted rate, capped at
-              85 percent</li>
-            <li>Supplier payout. Nothing touches a bank</li>
-            <li>Payment references. Ours, and the receipt says
-              <span class="num">App payment reference</span>, not UPI transaction ID</li>
+            <li style="color:#2c3c52;border-color:rgba(1,43,114,.12)"><b>Payment authorisation and settlement</b> &mdash; a local ledger</li>
+            <li style="color:#2c3c52;border-color:rgba(1,43,114,.12)"><b>The Paytm webhook</b> &mdash; designed, not connected</li>
+            <li style="color:#2c3c52;border-color:rgba(1,43,114,.12)"><b>Supplier payout</b> &mdash; nothing touches a bank</li>
+            <li style="color:#2c3c52;border-color:rgba(1,43,114,.12)"><b>References are ours</b> &mdash; the receipt says <span class="num">App payment reference</span>, never &ldquo;UPI transaction ID&rdquo;</li>
+            <li style="color:#2c3c52;border-color:rgba(1,43,114,.12)"><b>Cash sales</b> &mdash; a genuine blind spot, stated as one</li>
           </ul>
         </div>
       </div>
+      <p class="foot" style="color:#46566c;margin-top:24px"><b style="color:#0a1628">Why:</b> live authorisation needs
+        merchant credentials and a registered HTTPS callback that no hackathon team should have, and a
+        fake bank confirmation is the one lie a merchant would eventually catch. So we built the layer
+        we could build honestly and labelled the layer we could not &mdash; in the app, under
+        <b style="color:#0a1628">Profile &rarr; About</b>, and on each screen where it appears. Not affiliated
+        with or endorsed by Paytm.</p>
       <div class="fill"></div>
-      <p class="foot">Also honest: cash sales are a blind spot, and the demo shop is a
-        representative kirana, not production data. Not affiliated with or endorsed by
-        Paytm, stated in the app under Profile then About. Every simulated screen says
-        so on the screen itself, not in a footnote.</p>
-    </section>
-
-    <!-- 7 ------------------------------------------------------------------ -->
-    <section class="slide light close-slide">
-      <div class="eyebrow">The ask</div>
-      <h2>Give us the merchant<br />transaction stream, and<br />every kirana keeps
-        its own books.</h2>
-      <p class="lede wide">Next: aggregate the reorders. Ten thousand shops asking
-        Sri Balaji for the same crate is a purchase order Paytm can price, finance
-        and settle.</p>
-      <div class="ask">
-        <span class="chip solid">Now: the live demo</span>
+      <div class="track">
+        <span class="chip solid">Give us the transaction stream, and every kirana keeps its own books</span>
+        <span class="chip">Now: the live demo</span>
       </div>
     </section>
 
@@ -631,49 +791,60 @@
   </div>
 </div>
 
-<div id="hint">Arrow keys to move &middot; F for fullscreen</div>
+<div id="hint">&larr; &rarr; to move &middot; press F for fullscreen &middot; 1&ndash;9, 0 to jump</div>
 
 <script>
-  const slides = [...document.querySelectorAll('.slide')];
-  const bar = document.getElementById('bar');
-  const count = document.getElementById('count');
-  const hint = document.getElementById('hint');
-  const deck = document.getElementById('deck');
-  let i = 0;
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var bar = document.getElementById('bar');
+  var count = document.getElementById('count');
+  var hint = document.getElementById('hint');
+  var deck = document.getElementById('deck');
+  var i = 0;
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
 
   function show(next) {
     i = Math.max(0, Math.min(slides.length - 1, next));
-    slides.forEach((s, n) => s.classList.toggle('on', n === i));
+    for (var n = 0; n < slides.length; n++) {
+      if (n === i) slides[n].classList.add('on');
+      else slides[n].classList.remove('on');
+    }
     bar.style.width = ((i + 1) / slides.length * 100) + '%';
-    count.textContent = String(i + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
+    count.textContent = pad(i + 1) + ' / ' + pad(slides.length);
     if (location.hash !== '#' + (i + 1)) history.replaceState(null, '', '#' + (i + 1));
   }
 
-  /* The deck is authored at a fixed 1600x900 and scaled, so type never reflows
-     between the laptop it was written on and the projector it is shown on. */
   function fit() {
     if (window.matchMedia('(max-width: 820px)').matches) { deck.style.transform = ''; return; }
-    const scale = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+    var scale = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
     deck.style.transform = 'scale(' + scale + ')';
   }
 
-  addEventListener('keydown', (e) => {
-    const k = e.key;
+  function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      if (document.exitFullscreen) document.exitFullscreen();
+    } else {
+      var el = document.documentElement;
+      var req = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (req) req.call(el);
+    }
+  }
+
+  addEventListener('keydown', function (e) {
+    var k = e.key;
     if (k === 'ArrowRight' || k === 'ArrowDown' || k === ' ' || k === 'PageDown' || k === 'Enter') { e.preventDefault(); show(i + 1); }
     else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp' || k === 'Backspace') { e.preventDefault(); show(i - 1); }
-    else if (k === 'Home') show(0);
-    else if (k === 'End') show(slides.length - 1);
-    else if (k === 'f' || k === 'F') {
-      if (document.fullscreenElement) document.exitFullscreen();
-      else document.documentElement.requestFullscreen?.();
-    }
+    else if (k === 'Home') { e.preventDefault(); show(0); }
+    else if (k === 'End') { e.preventDefault(); show(slides.length - 1); }
+    else if (k === 'f' || k === 'F') { e.preventDefault(); toggleFullscreen(); }
+    else if (k === '0') show(9);
     else if (/^[1-9]$/.test(k)) show(Number(k) - 1);
     hint.classList.add('gone');
   });
 
-  /* Click advances, but only on the right two thirds, so a misclick going back
-     is deliberate rather than a surprise mid sentence. */
-  addEventListener('click', (e) => {
+  /* Click advances, but only on the right two thirds, so going back is
+     deliberate rather than a surprise mid sentence. */
+  addEventListener('click', function (e) {
     if (window.matchMedia('(max-width: 820px)').matches) return;
     show(e.clientX < window.innerWidth / 3 ? i - 1 : i + 1);
     hint.classList.add('gone');
@@ -682,7 +853,7 @@
   addEventListener('resize', fit);
   fit();
   show(Math.max(0, (Number(location.hash.slice(1)) || 1) - 1));
-  setTimeout(() => hint.classList.add('gone'), 6000);
+  setTimeout(function () { hint.classList.add('gone'); }, 7000);
 </script>
 </body>
 </html>
