@@ -14,12 +14,17 @@
 | 1:00 | Catalog builds | "**12 items**, priced, categorised, stock-flagged — from one picture." | **12 items** |
 | 1:30 | Share → QR | "She prints this once and sticks it on the counter." | QR card |
 | 1:50 | `/#/dukaan/meena-kirana` | "Customer scans, sees a live price list. No app install." | Storefront |
-| 2:20 | Collect **₹45** | "Payment lands. Paytm knows the amount — nobody knows *what sold*. That's the gap." | **₹45** |
+| 2:20 | **My QR** → type **45** → **Record a counter payment** | "Payment lands. Paytm knows the amount — nobody knows *what sold*. That's the gap." | **₹45** |
 | 2:50 | Basket inference | "We searched **14 combinations** and found **exactly one** basket that sums to ₹45 — **1× Thums Up 750 ml**, **92% confidence**." | **14 / 1 / 92%** |
 | 3:20 | Confirm | "One tap. Amount just became inventory." | — |
+| 3:30 | **Back ×2** (header), then **Business** tab → **Ek Photo Dukaan** | *(say nothing — just navigate)* | — |
 | 3:40 | Restock forecast | "Thums Up went from **About 2–3 left** to **About 1–2 left**, and now reads **~2 days** of cover. Confidence rose 35% → 60% because we have a real sale." | **1–2 left · ~2 days** |
 | 4:10 | Supplier bill photo | "Photograph the supplier bill, reorder is pre-filled. Nothing sends until she taps." | Bill lines |
 | 4:40 | Close | "Photo in, priced storefront out, and every payment teaches the shelf what it sold." | — |
+
+**Two traps:** ⚠️ **There is no seeded ₹45 payment** — do *not* hunt for one in the Payments list (seeded amounts are ₹43, ₹51, ₹52, ₹59, ₹64…). Always create it: **My QR → 45 → Record a counter payment.** ⚠️ A **receipt has no bottom tab bar** — getting back to Restock is **two header-back taps, then Business tab → Ek Photo Dukaan.**
+
+**The evidence panel has two titles — name the one you're on:** the judged **sample shop** (Meena's kirana shelf) opens **"How this catalog was made"**, badged *sample*; a **real photo** through OCR opens **"How this was read from your photo"**.
 
 ---
 
@@ -37,7 +42,7 @@
 - **Paytm Integration** — The UPI QR and `upi://pay` intent are real NPCI-spec and really open Paytm/GPay/PhonePe; authorisation and settlement are simulated behind a single documented adapter seam, and we label every simulated reference as ours.
 - **AI Innovation** — We invert the payment: a bounded subset-sum solver turns "₹45 arrived" into "1× Thums Up sold" with a ranked, explainable posterior — inference from data Paytm already has, no new hardware.
 - **User Impact** — Meena gets a priced digital storefront in one photo instead of an afternoon of typing, and her stock forecast improves every time she confirms a basket.
-- **Demo Quality** — The whole judged path is covered by a 40-check harness (`node server/verifyJudgePath.mjs`, 40/40) plus 150 passing tests, and the app refuses honestly when it can't read a photo.
+- **Demo Quality** — The whole judged path is covered by a 40-check harness (`node server/verifyJudgePath.mjs`, 40/40) plus **156 passing tests**, and the app refuses honestly when it can't read a photo.
 - **Build Feasibility** — OCR runs on-device in the browser, so marginal AI inference cost is zero and it works offline; the inference is rule-based, so there is no model to train, no data to collect, and no GPU.
 
 ---
@@ -60,7 +65,9 @@
 
 **What if the photo is bad?** It refuses instead of inventing. Tap the shelf photo sample — zero readable lines, and the pipeline says "nothing readable" rather than hallucinating a catalog. That refusal is a designed feature.
 
-**Do you have any real user data?** No, and we don't claim any. The seeded shop is clearly labelled demo data. What's real is the engineering: public repo, 150 tests, 40-check judge harness.
+**Why do the notifications say "simulated"?** *(Bell icon — two titles carry the label: `Supplier order queued (simulated payout)` and `Stock-in confirmed (simulated)`.)* Deliberate. Anything we simulate is labelled as simulated, right in the UI where the merchant sees it — not buried in a README. That's the same honesty rule as the placeholder-VPA warning on the QR.
+
+**Do you have any real user data?** No, and we don't claim any. The seeded shop is clearly labelled demo data. What's real is the engineering: public repo, 156 passing tests, 40-check judge harness.
 
 ---
 
@@ -69,7 +76,7 @@
 - **OCR misreads a row** → "Good — this is exactly why every row is editable and shows its own confidence. She corrects it once and it's saved." *(Tap the field, fix it, move on.)*
 - **Network dies** → "Convenient timing: the OCR is on-device, so this keeps working offline. That's the feasibility argument making itself." *(Switch to localhost.)*
 - **A screen errors** → "Let me take you in through the path a merchant actually uses." *(Reload `/#/`, restart from the home card. Do not open DevTools.)*
-- **Basket comes back empty** → "That's the honest answer — no combination of her catalog hits that amount, so we say so instead of guessing." *(Use ₹45.)*
+- **Basket comes back empty** → "That's the honest answer — no combination of her catalog hits that amount, so we say so instead of guessing." *(Fall back to ₹45 — but create it fresh: **My QR → 45 → Record a counter payment**. Never search the Payments list for a ₹45 entry; there isn't one.)*
 - **Anything unexplained** → "I'd rather show you the harness than hand-wave" → run `node server/verifyJudgePath.mjs`.
 
 ---
@@ -78,7 +85,7 @@
 
 - [ ] Dev server running (`npm run dev`, port **5173**) — this is the demo surface.
 - [ ] Browser at `/#/` **already loaded once**, so the Tesseract assets (~3.9 MB core + 2 MB language data) are warm in cache.
-- [ ] Tap the **Meena's kirana shelf** sample once, confirm 12 items, then **reset** — first run pre-warms OCR.
+- [ ] Tap the **Meena's kirana shelf** sample once, confirm 12 items, then **reset** (**Profile → Advanced → Reset to sample data** — it's inside the collapsed *Advanced* section) — first run pre-warms OCR.
 - [ ] Second tab open at `/#/dukaan/meena-kirana` (the customer view).
 - [ ] Third tab: https://merchant-app-black.vercel.app as the live-deployment proof.
 - [ ] Terminal ready with `node server/verifyJudgePath.mjs` typed but **not** run.
@@ -88,4 +95,4 @@
 
 ---
 
-*Verified: build clean · lint warnings only · 150/150 tests · judge path 40/40 · OCR harness passes · `/tesseract/*` and both demo JPEGs serve from local and production.*
+*Verified: build clean · lint warnings only · 156 passing tests · judge path 40/40 · OCR harness passes · `/tesseract/*` and both demo JPEGs serve from local and production.*
