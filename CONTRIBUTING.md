@@ -2,7 +2,7 @@
 
 **Unofficial Paytm AI hackathon prototype** (Ek Photo Dukaan). Not affiliated with or endorsed by Paytm.
 
-GitHub: [https://github.com/icvasu/paytm-ek-photo-dukaan](https://github.com/icvasu/paytm-ek-photo-dukaan) (private).  
+GitHub: [icvasu/paytm-ek-photo-dukaan](https://github.com/icvasu/paytm-ek-photo-dukaan).  
 Owner: **icvasu**. Teammate: **@Jaiaggarwaaaaal** (write).
 
 Do not commit `.env` files, API keys, tokens, or production credentials.
@@ -79,7 +79,7 @@ Do not commit `node_modules/`, `dist/`, `.vercel/`, `.gstack/`, or secrets (see 
 ## What to build vs ignore
 
 - **Build this:** Ek Photo Dukaan inside `merchant-app/`.
-- **Brief:** `Paytm_Ek_Photo_Dukaan_Brief.md`.
-- **Ignore for the demo:** `Paytm_QR_Rakshak_Winning_Strategy.md` — different concept.
+- **North star:** `Paytm_Ek_Photo_Dukaan_Brief.md`.
+- **Before promoting to `main`:** the walkthrough in `merchant-app/docs/DEMO.md` works, `npm test` and `npm run build` pass, and `node server/verifyJudgePath.mjs` is 40/40.
 
 Talk before changing `merchant-app/src/types/models.ts` — that is the shared schema.

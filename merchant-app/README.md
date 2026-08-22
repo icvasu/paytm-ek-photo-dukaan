@@ -1,78 +1,74 @@
-# Ek Photo Dukaan merchant demo
+# merchant-app
 
-Unofficial hackathon prototype: **one photo → digital dukaan** inside a Paytm-for-Business-style shell. A printed rate-card photo (or a labelled sample shop) becomes an editable catalog, a shareable customer price list / QR, and heuristic restock. Payments are the host rail, not the pitch. Not affiliated with or endorsed by Paytm. No production credentials.
+The Ek Photo Dukaan app: a Paytm-for-Business-style merchant shell with the **one photo → digital dukaan** loop inside it. Unofficial hackathon prototype — no Paytm credentials, no real money movement.
 
-**For judges:** [docs/PITCH.html](docs/PITCH.html) · [docs/DEMO.md](docs/DEMO.md) · [docs/SPEAKER_SCRIPT.md](docs/SPEAKER_SCRIPT.md) · [docs/JUDGE_DEFENSE.md](docs/JUDGE_DEFENSE.md) · [docs/FEATURES.md](docs/FEATURES.md) · [docs/PAYTM_INTEGRATION.md](docs/PAYTM_INTEGRATION.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/DEPLOY.md](docs/DEPLOY.md). Repo clone / branches: [CONTRIBUTING.md](../CONTRIBUTING.md). Screenshots: [docs/screens/](docs/screens/).
-
-**Deploying?** [docs/DEPLOY.md](docs/DEPLOY.md). Vercel **Root Directory must be `merchant-app`**. Env vars are optional — see [`.env.example`](.env.example).
+Product overview, demo script and honest limits live in the [repo README](../README.md). This file is the developer reference.
 
 ## Run
 
 ```bash
 npm install
-npm run dev          # http://127.0.0.1:5173 — UI + demo API
-npm run build        # tsc + Vite production frontend
-npm run lint
-npm test
+npm run dev      # http://localhost:5173 — UI and demo API from one Vite process
+npm run build    # tsc -b && vite build
+npm run lint     # oxlint
+npm test         # vitest
 ```
 
-One Vite process serves the React UI and the in-memory REST API.
+```bash
+node server/verifyJudgePath.mjs      # 40 checks over the judged path (dev server must be running)
+node server/verifySamplePhotoOcr.mjs # prints real OCR output for both shipped sample photos
+```
 
-## Demo flow
-
-1. Profile → **Advanced** → **Reset to sample data** (the developer affordances live in that collapsed section).
-2. Home → scroll to **More for your business** → **Ek Photo Dukaan**. It sits below today's sales, the Collect / My QR pair and the settlement balance; the **Business** tab has the same entry as a one-tap row.
-3. Use a labelled **sample shop** (repeatable fixture — this is the judged tap), or run real on-device OCR by photographing a printed rate card or tapping a **sample photo**.
-4. Review / edit prices and availability.
-5. Preview `/#/dukaan/meena-kirana`. Show QR, copy link, WhatsApp draft.
-6. Add the matching **sample supplier bill** (Sri Balaji Distributors, ₹7,175). Collect ₹45 and confirm the Thums Up basket — one exact basket, 92% confidence.
-7. Approve reorder, open the WhatsApp draft, mark paid/received (simulated).
-8. Reset again.
+Env vars are optional — see [`.env.example`](.env.example). Deploying: [docs/DEPLOY.md](docs/DEPLOY.md). Vercel **Root Directory must be `merchant-app`**.
 
 ## Hash routes
 
-- `/#/` Home
-- `/#/payments`, `/#/payments/:id`
-- `/#/collect`, `/#/qr`
-- `/#/business`, `/#/customers`, `/#/customers/:id`
-- `/#/settlements`, `/#/insights`
-- `/#/notifications`, `/#/search`, `/#/profile`
-- `/#/dukaan/scan`, `/#/dukaan/manage`, `/#/dukaan/invoice`, `/#/dukaan/:slug`
+| Route | Screen |
+| --- | --- |
+| `/#/` | Home — today's sales, Collect / My QR, settlement balance, Ek Photo Dukaan under *More for your business* |
+| `/#/dukaan/scan` | One photo or a labelled sample shop → catalog |
+| `/#/dukaan/manage` | Edit items, share QR / link / WhatsApp, restock, reorder |
+| `/#/dukaan/invoice` | Supplier bill photo or the sample bill matching the loaded shop |
+| `/#/dukaan/:slug` | Customer price list and shop UPI QR (`meena-kirana`) |
+| `/#/collect`, `/#/qr` | Collect payment · My QR (real `upi://pay` intent) |
+| `/#/payments`, `/#/payments/:id` | Ledger, receipt, basket confirm |
+| `/#/business`, `/#/customers`, `/#/customers/:id` | Business hub · customer history |
+| `/#/settlements`, `/#/insights` | Simulated settlement · rule-based insights |
+| `/#/notifications`, `/#/search`, `/#/profile` | Alerts, search, reset demo |
 
 ## Demo REST API
 
+Local Vite middleware and the Vercel function in `api/index.ts` share `server/demoApi.ts`. Seeded, demo-only, no secrets.
+
 - `GET /api/health` — `{ official: false, persistence, … }`
-- `GET /api/merchant` · `GET /api/transactions` · `GET /api/customers` · `GET /api/settlements` · `GET /api/notifications`
-- `GET /api/insights` · `GET /api/catalog` · `GET /api/dukaan/:slug`
-- `GET /api/supplier` · `GET /api/supplier-orders` · `GET /api/basket-assignments`
-- `POST /api/catalog` · `POST /api/catalog/items` · `POST /api/catalog/items/:id` · `…/remove`
-- `POST /api/supplier/invoice` · `POST /api/supplier-orders` · `POST /api/supplier-orders/:id/confirm`
-- `POST /api/payments` · `POST /api/transactions/:id/basket` · `…/refund` · `…/confirm`
-- `POST /api/settlements/instant` · `POST /api/notifications/read` · `POST /api/reset`
+- `GET /api/merchant` · `/api/transactions` · `/api/customers` · `/api/settlements` · `/api/notifications`
+- `GET /api/insights` · `/api/catalog` · `/api/dukaan/:slug`
+- `GET /api/supplier` · `/api/supplier-orders` · `/api/basket-assignments`
+- `POST /api/catalog` · `/api/catalog/items` · `/api/catalog/items/:id` · `…/remove`
+- `POST /api/supplier/invoice` · `/api/supplier-orders` · `/api/supplier-orders/:id/confirm`
+- `POST /api/payments` · `/api/transactions/:id/basket` · `…/refund` · `…/confirm`
+- `POST /api/settlements/instant` · `/api/notifications/read` · `/api/reset`
 
-Local Vite middleware and the Vercel `api/index.ts` function share `server/demoApi.ts`. Demo-only.
+## Module map
 
-## Architecture
+| Path | Owns |
+| --- | --- |
+| `src/services/vision/` | On-device OCR, catalog and invoice parsers, sample fixtures |
+| `src/domain/basketSolver.ts` | Exact-sum basket candidates from a ticket amount |
+| `src/intelligence/engine.ts`, `demand.ts` | Deterministic insights, days-of-cover |
+| `src/domain/metrics.ts` | Dashboard numbers — do not recompute these in components |
+| `src/services/paytm/` | `PaytmService` seam and the real `upi://pay` builder |
+| `src/store/useMerchantStore.ts` | UI state; persist key `paytm-merchant-demo-v1` |
+| `src/data/seed.ts` | Meena Kirana, 22 Aug 2026, 2:35 pm IST |
+| `server/demoApi.ts` | Seeded entities and the REST surface above |
 
-- `src/domain/metrics.ts` — dashboard numbers (do not duplicate in UI).
-- `src/intelligence/engine.ts` + `demand.ts` — deterministic insights and days-of-cover.
-- `src/domain/basketSolver.ts` — exact-sum basket candidates from a ticket amount.
-- `src/services/vision/` — on-device OCR, catalog/invoice parsers, sample fixtures.
-- `src/services/paytm/` — `PaytmService` seam + real `upi://pay` builder.
-- `server/demoApi.ts` — seeded entities, no secrets.
-- `src/store/useMerchantStore.ts` — UI state; persist key `paytm-merchant-demo-v1`.
-- `src/data/seed.ts` — Meena Kirana, 22 Aug 2026, 2:35 pm IST.
+`src/types/models.ts` is the shared schema — agree changes before editing it.
 
-## Honest limits
+## Constraints that must hold
 
-- Payment **authorisation**, settlement, refund and supplier payout are **simulated**.
-- UPI QR construction is **real**; money moves only if `VITE_MERCHANT_VPA` is a real handle.
-- Sample **shops** are **fixtures** (rows we wrote, shown next to a drawing). A user-supplied photo and the two sample **photos** all use **real on-device OCR**, with no fixture behind them — `node server/verifySamplePhotoOcr.mjs` prints what they actually read.
-- Stock is a **range / heuristic**, never a fake exact count.
-- Receipt identifiers are **ours**: the field is labelled **App payment reference** (`EPD-…`), not “UPI transaction ID”, and settlement refs are `EPD-STL-…`. No NPCI identifier is implied anywhere.
-- The affiliation disclosure is stated in full at **Profile → About**; each screen labels its own simulated part where it appears.
-- WhatsApp is a `wa.me` draft, not Cloud API send.
-- Without Redis, Vercel state is per-instance. `/api/health` reports the mode.
-- No auth, multi-merchant tenancy, live Paytm webhooks, or production hardening.
+- Stock is a **range or flag**, never a fake exact count.
+- Receipt identifiers are labelled **App payment reference** (`EPD-…`), never "UPI transaction ID".
+- Payment authorisation, settlement, refund and supplier payout stay **simulated** and labelled.
+- The demo works with **no API keys** and no network.
 
-See [docs/FEATURES.md](docs/FEATURES.md) for REAL vs SIMULATED on every screen.
+REAL vs SIMULATED for every screen: [docs/FEATURES.md](docs/FEATURES.md).

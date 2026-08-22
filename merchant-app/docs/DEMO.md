@@ -6,8 +6,6 @@ Phone-width browser (DevTools responsive, ~390px) looks like the merchant app. U
 
 The hero path is **one photo → digital dukaan**. Merchant payments are the existing shell and the signal source, not the opening pitch.
 
-For the 5-minute judged run, use [SPEAKER_SCRIPT.md](./SPEAKER_SCRIPT.md). It is the timed version of this file with the words to say. This document is the fuller walkthrough and the reference for what each screen actually does.
-
 Every screen below is captured in [`screens/`](./screens/). `journey-01-empty-dukaan.png` through `journey-14-qr.png` are this walkthrough in order, so you can confirm what a beat should look like without running the app.
 
 <p align="center">
@@ -72,7 +70,7 @@ The seeded merchant is **Meena Kirana & General Store** (owner Meena Reddy), so 
 
 ## Timing
 
-Use [SPEAKER_SCRIPT.md](./SPEAKER_SCRIPT.md) for the 5-minute cut. Do not open QR Rakshak, GST, or a chatbot. Sample shops and the seeded payment stream work with no external model and no network.
+Do not open GST, khata reminders, or a chatbot. Sample shops and the seeded payment stream work with no external model and no network.
 
 The sample *photos* also need no external service, but the first read of the session does pull the OCR engine and English model (~6 MB) from our own origin. Tap one once before you present so it is warm; on a hostile venue network a cold read is the slowest thing in the demo.
 

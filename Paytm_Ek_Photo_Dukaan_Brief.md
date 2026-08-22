@@ -187,7 +187,7 @@ Inventory appeared in ~30% of a prior Mumbai field; OCR/vision in ~25%. If a jud
 
 **Always lead with:** every inventory app asks you to enter stock; nobody does; we never ask.
 
-Do not merge this with QR Rakshak, khata reminders, or a merchant chatbot in the same demo.
+Do not merge this with khata reminders or a merchant chatbot in the same demo.
 
 ---
 
@@ -269,12 +269,6 @@ Paytm sales are observed. Cash is a prior. We do not pretend otherwise.
 No. We have the label (payment happened / stock moved) and the constraint (invoices). Volume trains later. Do not fake a learning curve.
 
 ---
-
-## Files in this folder
-
-- `Paytm_Ek_Photo_Dukaan_Brief.md` — this document (share this with other chats / teammates)
-- `Paytm_Ek_Photo_Dukaan_Brief.pdf` — printable copy of the same
-- `Paytm_QR_Rakshak_Winning_Strategy.md` — **separate** concept. Do not mix in one demo.
 
 ---
 
