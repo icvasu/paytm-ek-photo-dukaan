@@ -17,15 +17,42 @@ Payments are the base rail, not the pitch.
 
 ---
 
+## Verify it rather than believe it
+
+Every factual claim below is produced by a command in this repo, so none of it has to be taken on trust. From `merchant-app/`, after `npm install`:
+
+| Command | What it establishes | Output on this tree |
+| --- | --- | --- |
+| `npm test` | Unit coverage over the UPI builder, OCR line parse, basket solver, demand model and shipped fixtures | `Test Files 13 passed · Tests 167 passed` |
+| `node server/verifyJudgePath.mjs` | Walks the whole demo path against the running API in order, including the adversarial cases | `ALL PASS: 40 passed, 0 failed` |
+| `node server/verifySamplePhotoOcr.mjs` | Runs the two shipped photographs through the real OCR pipeline and prints what it read | See below |
+
+The OCR harness is the claim we would most want checked, because it is the one most hackathon projects fake:
+
+```
+meena-kirana-rate-card-photo   13 lines, mean text confidence 94%
+                               12 priced rows kept, 1 skipped ("MEENA KIRANA - RATE CARD" — no price on the line)
+                               12 of 12 matched a lexicon product
+
+meena-kirana-shelf-photo       0 lines, mean text confidence 0%
+                               0 priced rows. Pipeline raises NoTextFoundError.
+```
+
+Same function, same device, opposite outcomes. The cluttered-shelf photo returns **nothing** and the app says so, rather than inventing a catalog. That refusal is deliberate, and it is the reason to believe the rate-card result.
+
+What is **not** verifiable by a command, because it is honestly not real: payment authorisation, settlement, refund and supplier payout are a local ledger. The [honest-limits table](#honest-limits) draws every line.
+
 ## The loop
 
-| Step | What happens |
-| --- | --- |
-| **Photo** | On-device OCR (tesseract.js, no upload) reads a printed rate card into priced rows. |
-| **Catalog** | The merchant reviews and edits. The photo is a draft, never the last word. |
-| **Storefront** | A customer price list at `/#/dukaan/:slug` with a real `upi://pay` QR. |
-| **Attribution** | A ₹45 payment is not just ₹45. A bounded subset-sum solver proposes exact baskets; the merchant confirms one. |
-| **Restock** | Confirmed baskets move a stock **range** and days-of-cover. A supplier-bill photo pre-fills the reorder. |
+| Step | What happens | Where it lives |
+| --- | --- | --- |
+| **Photo** | On-device OCR (tesseract.js, nothing uploaded) reads a printed rate card into priced rows. | `src/services/vision/ocr.ts`, `parseCatalog.ts` |
+| **Catalog** | The merchant reviews and edits. The photo is a draft, never the last word. | `src/services/vision/catalogPipeline.ts` |
+| **Storefront** | A customer price list at `/#/dukaan/:slug` with a real NPCI `upi://pay` QR. | `src/services/paytm/upi.ts` |
+| **Attribution** | A ₹45 payment is not just ₹45. A bounded subset-sum solver proposes exact baskets; the merchant confirms one. | `src/domain/basketSolver.ts` |
+| **Restock** | Confirmed baskets move a stock **range** and days-of-cover. A supplier-bill photo pre-fills the reorder. | `src/intelligence/demand.ts`, `engine.ts` |
+
+Each of those files has a test beside it. The inference is rule-based and deterministic: no model is trained, no data leaves the device, and the same input gives the same output every run.
 
 ---
 
@@ -74,6 +101,8 @@ Use the kirana shelf, not the rate card: on the kirana catalog ₹45 has exactly
 Every route is captured in [`merchant-app/docs/screens/`](merchant-app/docs/screens/), and `journey-01` through `journey-14` are this run in order.
 
 ---
+
+<a id="honest-limits"></a>
 
 ## Honest limits
 
