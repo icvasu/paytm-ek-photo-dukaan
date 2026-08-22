@@ -19,6 +19,7 @@ import { useMerchantStore } from './store/useMerchantStore'
 import { averageTicket, customerStats, dailySalesSeries, deriveDashboard, hourlyActivity, returningShare } from './domain/metrics'
 import { intelligenceEngine } from './services/container'
 import { formatINR } from './lib/money'
+import { openWhatsapp, whatsappUrl } from './lib/share'
 import { formatDayLabel, formatTime } from './lib/dates'
 import type { PaymentMethod, Transaction } from './types/models'
 import { buildDemandReport, buildStockForecasts } from './intelligence/engine'
@@ -1032,6 +1033,18 @@ function DukaanManagePage() {
     }
   }
 
+  /*
+   * A desktop browser can refuse the new tab even on a click. When that happens
+   * the message is put on the clipboard instead, so the merchant still has
+   * something to paste rather than a button that appears to do nothing.
+   */
+  const sendOnWhatsapp = (text: string, phone?: string) => {
+    if (openWhatsapp(text, phone) === 'opened') return
+    void navigator.clipboard.writeText(text)
+      .then(() => toast({ text: 'Your browser blocked the new tab. The message is copied — paste it into WhatsApp.', tone: 'error' }))
+      .catch(() => toast({ text: 'Your browser blocked the new tab. Allow pop-ups for this site to open WhatsApp.', tone: 'error' }))
+  }
+
   const save = async (id: string, patch: Parameters<typeof updateItem>[1]) => {
     await updateItem(id, patch)
     setSavedId(id)
@@ -1129,10 +1142,13 @@ function DukaanManagePage() {
       </section>
       <div className="share-actions">
         <button onClick={() => void copy(link, 'Dukaan link')}><Copy aria-hidden="true" />Copy link</button>
-        <button className="whatsapp" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener,noreferrer')}>
+        <button className="whatsapp" onClick={() => sendOnWhatsapp(shareText)}>
           <MessageCircle aria-hidden="true" />WhatsApp
         </button>
       </div>
+      <p className="field-hint" style={{ marginTop: 'var(--space-2)' }}>
+        Opens WhatsApp with your message ready to send. You choose the chat and press send.
+      </p>
 
       {sharing && <Sheet title="Share your dukaan" description="Customers see your live price list — nothing else." onClose={() => setSharing(false)}>
         <div className="share-card" style={{ marginBottom: 'var(--space-4)' }}>
@@ -1142,10 +1158,13 @@ function DukaanManagePage() {
         <div className="link-preview"><Link2 aria-hidden="true" /><span>{link}</span></div>
         <div className="share-actions">
           <button onClick={() => void copy(link, 'Dukaan link')}><Copy aria-hidden="true" />Copy link</button>
-          <button className="whatsapp" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener,noreferrer')}>
+          <button className="whatsapp" onClick={() => sendOnWhatsapp(shareText)}>
             <MessageCircle aria-hidden="true" />WhatsApp
           </button>
         </div>
+        <p className="field-hint" style={{ marginTop: 'var(--space-2)' }}>
+          Opens WhatsApp with your message ready to send. You choose the chat and press send.
+        </p>
         <button className="secondary full" style={{ marginTop: 'var(--space-2)' }} onClick={() => { setSharing(false); navigate(`/dukaan/${catalog.slug}`, { state: previewState }) }}>
           <Eye aria-hidden="true" />Preview as a customer
         </button>
@@ -1215,13 +1234,16 @@ function DukaanManagePage() {
         <div className="order-actions">
           <button className="whatsapp-order" onClick={() => {
             const text = `Namaste ${data.supplier?.name}, ${data.merchant.businessName} ke liye order:\n${latestOrder.lines.map((line) => `${line.quantity} × ${line.itemName}`).join('\n')}\nTotal quote: ${formatINR(latestOrder.amountPaise)}. Please confirm availability.`
-            window.open(`https://wa.me/${data.supplier?.phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer')
+            sendOnWhatsapp(text, data.supplier?.phone)
           }}><MessageCircle aria-hidden="true" />Send on WhatsApp</button>
           {latestOrder.status === 'queued' && <button disabled={busy === 'confirm'} onClick={async () => {
             setBusy('confirm')
             try { await confirmOrder(latestOrder.id); toast({ text: 'Order confirmed. Stock estimates updated.' }) } catch (reason) { toast({ text: reason instanceof Error ? reason.message : 'Could not confirm', tone: 'error' }) } finally { setBusy('') }
           }}>{busy === 'confirm' ? 'Confirming…' : 'Mark as paid and received'}</button>}
         </div>
+        <p className="field-hint" style={{ marginTop: 'var(--space-2)' }}>
+          Opens WhatsApp with the order ready to send to {data.supplier?.name}. You press send.
+        </p>
       </section>}
 
       <button className="secondary full rescan" onClick={() => navigate('/dukaan/scan')}>
@@ -1379,7 +1401,7 @@ function PublicDukaanPage() {
         <a className="call-shop" href={`tel:${data.merchant.phone.replace(/\s/g, '')}`}>
           <Phone aria-hidden="true" />Call shop
         </a>
-        <a className="whats-shop" href={`https://wa.me/${data.merchant.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Namaste ${shopName}, I would like to order:`)}`}
+        <a className="whats-shop" href={whatsappUrl(`Namaste ${shopName}, I would like to order:`, data.merchant.phone)}
           target="_blank" rel="noopener noreferrer">
           <MessageCircle aria-hidden="true" />Order on WhatsApp
         </a>
