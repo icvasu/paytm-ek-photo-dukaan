@@ -8,6 +8,15 @@ The hero path is **one photo → digital dukaan**. Merchant payments are the exi
 
 For the 5-minute judged run, use [SPEAKER_SCRIPT.md](./SPEAKER_SCRIPT.md). It is the timed version of this file with the words to say. This document is the fuller walkthrough and the reference for what each screen actually does.
 
+Every screen below is captured in [`screens/`](./screens/). `journey-01-empty-dukaan.png` through `journey-14-qr.png` are this walkthrough in order, so you can confirm what a beat should look like without running the app.
+
+<p align="center">
+  <img src="screens/home.png" alt="Home — Ek Photo Dukaan under ‘More for your business’, below today's sales" width="200" />
+  <img src="screens/dukaan-scan.png" alt="Scan — camera, sample shops, sample photos" width="200" />
+  <img src="screens/dukaan-manage.png" alt="Manage — editable catalog, share, restock" width="200" />
+  <img src="screens/public-dukaan.png" alt="Public storefront with the UPI QR" width="200" />
+</p>
+
 ---
 
 ## Pick the right sample
@@ -37,21 +46,23 @@ The seeded merchant is **Meena Kirana & General Store** (owner Meena Reddy), so 
 ## Happy path (judges)
 
 1. **Reset** — Profile → **Advanced** → **Reset to sample data**. Confirm Home shows Meena's seeded sales and the Ek Photo Dukaan card reads *Turn one photo into your catalog* (no leftover catalog from a previous run).
-2. **Home** — Point to the **Ek Photo Dukaan** shortcut inside the merchant shell and tap it. With no catalog it routes to `/dukaan/scan`; with one it routes to `/dukaan/manage`.
+2. **Home** — Scroll past **Today's business**, the **Collect / My QR** quick actions and the **Available for settlement** card to the **More for your business** heading. The **Ek Photo Dukaan** shortcut sits under it — deliberately below her money, because it is a feature of the merchant app rather than a replacement for it. Tap it: with no catalog it routes to `/dukaan/scan`, with one it routes to `/dukaan/manage`. The same entry is a one-tap row on the **Business** tab if you would rather not scroll on stage.
 3. **One photo** — Tap **Meena's kirana shelf** under *or start from a sample shop*. That is the judged tap; it is the first card and it stays the first card. To show real OCR instead, either tap **Take or choose a photo** with a printed price list, or tap **Photo of a printed rate card** under *or read a sample photo for real* — both run tesseract.js on-device through the same function. Sample selection is by explicit tap only — there is no longer any filename heuristic.
 4. **Honest stages** — For any photo, uploaded or sampled, you see the on-device reading progress and a per-row confidence. For a sample *shop* you see the fixture load instead. Read the disclosure on Manage: fixture rows say they ship with the prototype and were not read out of the picture, while a read says how many lines it got off the image.
 5. **Review stock ranges** — e.g. Thums Up **Running low, 2–3 bottles**; Amul Taaza Milk **Missing today**. These are visual estimates, never observed exact counts.
-6. **Show the work** — Open **How this was read** on Manage. For an uploaded photo it lists engine, lines read, rows accepted and rows rejected. For a sample it says plainly that it is a fixture.
+6. **Show the work** — Open the explain row under the catalog summary on Manage. Its label tells you which path you took, so do not go hunting for the wrong one: a real read (your photo, or a sample *photo*) is **How this was read from your photo**, badged with the engine, listing lines read, mean text confidence, rows kept, rows skipped and the reason for each skip. A sample *shop* is **How this catalog was made**, badged *sample*, and says plainly that the rows ship with the prototype and were not read out of the picture. The judged tap produces the second one.
 7. **Edit** — Change one price or toggle availability. Merchant is source of truth.
 8. **Persist** — The catalog was stored through `POST /api/catalog`. Refresh the page; the API-backed list remains.
 9. **Customer list** — Tap **Preview** to open `/#/dukaan/meena-kirana`. Same items, read-only.
 10. **Real UPI QR** — On the storefront, **Pay this shop** renders a genuine NPCI `upi://pay` intent. Let a judge scan it. Open **What this QR encodes** to show the field-by-field decode. If the payee is `example.merchant@upi` the card says scanning opens a payment app but no money can move — say that out loud. Set `VITE_MERCHANT_VPA` to point it at a real account.
 11. **Share** — On Manage, show the price-list QR, copy the link, and open the `wa.me` draft. Do not claim API delivery.
-12. **Payment → items** — Home → **Collect** → `45` → **Collect ₹45** → **View payment**. Under *What did this customer buy?* the solver proposes **1× Thums Up 750 ml**. Open **How this was inferred**: bounded multi-subset-sum, 14 combinations explored, 1 exact-sum basket, confidence capped at 92%. Tap **Confirm items**.
-13. **Stock drops** — Back on Manage, the Thums Up forecast moves from **about 2–3 left** (no cover figure, nothing confirmed yet) to **about 1–2 left, ~2 days** of cover. Say both numbers out loud so the change is audible.
+12. **Payment → items** — Home → **Collect** → `45` → **Collect ₹45** → **View payment**. Under *What did this customer buy?* the solver proposes **1× Thums Up 750 ml**, and the line under it reads **92% confidence · 1 item · 1 unit** next to a filled dot — a number and a shape, never colour alone. Open **How this was inferred**: bounded multi-subset-sum, 14 combinations explored, 1 exact-sum basket, confidence capped at 92%. Tap **Confirm items**.
+
+    The receipt above it labels the reference **App payment reference** (`EPD-…`), which is this app's own identifier. It is not a UPI transaction ID and does not pretend to be one; no UPI network is contacted.
+13. **Stock drops** — Back on Manage — two taps of the header back arrow to reach Home, then **Business** → **Ek Photo Dukaan**, because a payment receipt has no bottom tab bar — the Thums Up forecast moves from **About 2–3 left · 35% confidence** with **Low on shelf** on the right (no cover figure, because nothing had been attributed yet) to **About 1–2 left · 60% confidence** with **~2 days**. Say both numbers out loud so the change is audible.
 14. **Supplier bill (photo two)** — Tap **Add supplier bill**. The page offers two paths and they are labelled differently, so say which one you took:
     - **Take or choose a photo of the bill** runs the same on-device OCR as the shelf photo, then checks each row's `qty × rate = amount` arithmetic and fuzzy-matches the item against your own catalog. Use this if a judge hands you a printed bill. Unreadable rows are listed with the reason instead of being guessed.
-    - **Use this sample bill instead** loads the labelled fixture. For the kirana shelf that is **Sri Balaji Distributors**, usual order **₹7,175** (Aashirvaad ×10, Fortune Oil ×24, Thums Up ×24, Amul Milk ×30). Repeatable, so this is the safer judged path — but call it a sample, not a live read.
+    - **Use this sample bill instead** loads the labelled fixture. For the kirana shelf that is **Sri Balaji Distributors**, and the preview footer is labelled **Usual order** — **₹7,175** (Aashirvaad ×10, Fortune Oil ×24, Thums Up ×24, Amul Milk ×30). Repeatable, so this is the safer judged path — but call it a sample, not a live read.
 
     Either way, the saved card shows the disclosure verbatim and **How this bill was read** opens the row-by-row evidence for the photo path.
 15. **Restock action** — **Approve reorder** (4 items are flagged: Aashirvaad Atta, Fortune Oil, Thums Up, Amul Milk). Open the WhatsApp supplier draft, then **Mark as paid and received**. The order card carries the disclosure verbatim: *Merchant approved. Simulated Paytm vendor payout queued; no bank API called.* Point at it.
@@ -91,7 +102,7 @@ Deploy from `merchant-app/` with `npx vercel --prod`. Vercel serves the Vite bui
 
 For durable cross-device edits, connect an Upstash Redis integration in the Vercel project. The API automatically uses either `KV_REST_API_URL` + `KV_REST_API_TOKEN` or `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`. `/api/health` reports `persistence: "shared-redis"` when configured.
 
-The price-list QR, copied link, and WhatsApp draft are built at runtime from `window.location.origin`, so a production QR points at the current Vercel domain rather than localhost. A phone opening `/#/dukaan/meena-kirana` fetches `/api/dukaan/meena-kirana` in its own browser. On a cold serverless instance, that endpoint seeds the same 12-item Meena Kirana DEMO catalog.
+The price-list QR, copied link, and WhatsApp draft are built at runtime from `window.location.origin`, so a production QR points at the current Vercel domain rather than localhost. A phone opening `/#/dukaan/meena-kirana` fetches `/api/dukaan/meena-kirana` in its own browser. On a cold serverless instance, that endpoint seeds the same 12-item Meena Kirana sample catalog.
 
 Without those Redis environment variables, catalog edits and demo payments are kept on `globalThis` for the lifetime of a warm serverless instance. They can reset or differ across concurrent instances. The public phone route always remains demoable through the seeded cold-start catalog, but do not claim durable cross-device edits unless `/api/health` says `shared-redis`.
 
@@ -101,9 +112,22 @@ Without those Redis environment variables, catalog edits and demo payments are k
 
 - Tap **Photo of a cluttered shelf** → OCR finds no text at all and the scan screen refuses and explains, rather than inventing rows. This is the one-tap version of the check below, and it needs no props.
 - Upload a photo with no readable price lines → same refusal. There is no silent fallback catalog.
-- Tap **Photo of a printed rate card**, then open **How this was read** on Manage → engine, 13 lines, rows kept, rows skipped, and the skipped row's reason. The one skipped row is real: OCR ran "Atta 5 kg" together as `Atta5kg`, which the name filter rejects as a reference code. Say so if a judge counts 11 rows against 12 on the card — the price ₹295 was read correctly, the *name* was refused.
+- Tap **Photo of a printed rate card**, then open **How this was read from your photo** on Manage → engine, 13 lines, rows kept, rows skipped, and the skipped row's reason. The one skipped row is real: OCR ran "Atta 5 kg" together as `Atta5kg`, which the name filter rejects as a reference code. Say so if a judge counts 11 rows against 12 on the card — the price ₹295 was read correctly, the *name* was refused.
 - Try an amount with no exact basket → the attribution card says so and asks the merchant to pick. It does not guess.
 - Try ₹45 on the **printed rate card** catalog → 8 baskets, 28% confidence, alternates listed. Useful as a deliberate demonstration of ambiguity.
+- Delete a catalog row → the toast offers **Undo** for five seconds and nothing reaches the API until it expires. Destructive taps are recoverable, which is the difference between an editor a shopkeeper trusts and one she stops using.
+- Break the network, then open `/#/dukaan/meena-kirana` on a phone → after a 12-second cap the storefront shows **This shop isn't available** with **Try again**, instead of an infinite skeleton. An honest failure state is worth showing on purpose.
 - Handwriting: do **not** use as the judged path.
 - Cash: if asked, "we see Paytm sales clearly; cash is a prior."
 - Collecting ₹13, or any note containing "fail", always fails. Useful for showing the failure screen on demand.
+
+---
+
+## Where the honesty lives on screen
+
+If a judge asks "where do you say you are not Paytm", there is one answer and it is a place, not a paragraph:
+
+- **Profile → About** carries the affiliation disclosure: independent hackathon prototype, not affiliated with or endorsed by Paytm; payments, settlements and supplier payouts simulated on-device; no live Paytm, bank or WhatsApp Business integration; sample merchant, customer and supplier records.
+- Individual screens then label their own simulated part where it appears: the placeholder-VPA notice under any QR, the fixture-vs-read note on scan and manage, the *Simulated Paytm vendor payout queued* line on the order card, and the range-not-a-count note on restock.
+- A payment receipt labels its reference **App payment reference** (`EPD-…`). That is this app's own identifier, not a UPI transaction ID, so nothing on the receipt implies the UPI network confirmed anything.
+- Developer affordances (fixed demo outcomes, reset) sit inside the collapsed **Advanced** section on Profile rather than in the merchant's way.

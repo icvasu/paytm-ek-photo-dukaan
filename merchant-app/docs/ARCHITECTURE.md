@@ -126,7 +126,7 @@ Implemented (separate from the merchant's payment QR route):
 - `/#/dukaan/manage` — editable merchant catalog, restock hint, share QR/link
 - `/#/dukaan/:slug` — read-only customer price list (slug `meena-kirana`)
 
-Home has one **Ek Photo Dukaan** shortcut. Profile **Reset demo data** clears the catalog with the rest of the seeded state.
+Home has one **Ek Photo Dukaan** shortcut, under the **More for your business** heading below the sales hero, the Collect / My QR pair and the settlement balance; the Business tab carries the same entry. Profile → **Advanced** → **Reset to sample data** clears the catalog with the rest of the seeded state.
 
 ---
 

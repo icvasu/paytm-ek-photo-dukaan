@@ -6,6 +6,10 @@ The live app is the presentation. `PITCH.html` is a wrapper you leave on slide 1
 while you talk, and return to at 4:30. If you have to choose between finishing a
 slide and finishing a tap, finish the tap.
 
+Rehearse against [`screens/`](./screens/): `journey-01-empty-dukaan.png` through
+`journey-14-qr.png` are this run in order, so you can check what each beat should
+look like before you are in front of anyone.
+
 ---
 
 ## Before you are called
@@ -66,10 +70,14 @@ your hands.
 **Tap sequence:**
 
 1. Switch to the app, on **Home**.
-2. Tap the **Ek Photo Dukaan** card at the top. It reads *Turn one photo into
-   your catalog*.
+2. Scroll past **Today's business**, the **Collect / My QR** pair and the
+   settlement balance to the **More for your business** heading, and tap the
+   **Ek Photo Dukaan** card under it. It reads *Turn one photo into your
+   catalog*. (The card is deliberately below her money, not above it. If you
+   prefer not to scroll on stage, the **Business** tab has the same entry as a
+   one-tap row.)
 3. On the scan screen, tap **Meena's kirana shelf** under *or start from a
-   sample shop*.
+   sample shop*. It is the first card in the first group.
 4. Land on **Manage**.
 
 **Say, while step 3 is running:**
@@ -77,14 +85,22 @@ your hands.
 > This is Paytm for Business. She is already in here every morning to check her
 > settlement. One card, one tap.
 >
-> She photographs her shelf. The reading happens on the phone, not on a server.
-> Twelve items, with prices, in about four seconds. She typed nothing.
+> She photographs her shelf and the reading happens on the phone, not on a
+> server. Twelve items with prices, and she typed nothing. I am opening our
+> labelled sample shelf so the numbers are identical every run — the reader
+> itself is one tap below it and I will show you a live read if you want one.
 
-**Then, on the Manage screen, tap the row that says "How this was read":**
+**Then, on the Manage screen, tap the explain row under the summary.** On the
+judged path it is labelled **How this catalog was made**, badged *sample*,
+because you tapped a fixture — it says the rows ship with the prototype and were
+not read out of the picture. Read that, do not talk around it. The same row is
+labelled **How this was read from your photo** and lists engine, lines read,
+rows kept and rows skipped whenever the catalog came from a real read.
 
-> And it shows its work. Lines read, rows accepted, rows thrown away. If it is
-> not sure about a price it says so, and she fixes it in one tap, because she is
-> the source of truth and the model is not.
+> And it shows its work. Where these rows came from, and on a real read: lines
+> read, rows kept, rows thrown away and why. If it is not sure about a price it
+> says so, and she fixes it in one tap, because she is the source of truth and
+> the model is not.
 
 **Point at:** The twelve item rows first. Then the stock tags on the right,
 specifically **Thums Up, Running low, 2 to 3 bottles**. Say:
@@ -99,15 +115,22 @@ specifically **Thums Up, Running low, 2 to 3 bottles**. Say:
 - Do not claim the twelve rows were read out of that particular sample picture.
   The app itself says they ship with the prototype. Read what the app says.
 - Do not linger on editing. One price edit at most. The edit is not the story.
+  (If a judge asks whether an edit is destructive: delete a row and the toast
+  offers **Undo** for five seconds before anything is sent to the API.)
 
 **If a judge interrupts** with "did it actually read that, or is it hardcoded":
-> That one is a sample fixture and the screen says so. Hand me a photo of any
-> printed price list and I will run it through the real reader right now.
+> That one is a sample fixture and the screen says so. Watch this instead.
+
+Then go back and tap **Photo of a printed rate card** under *or read a sample
+photo for real*. That is a photograph with no fixture behind it, so whatever
+appears was read off the image, and it answers the question in one tap without
+borrowing anyone's phone. `DEMO.md` has the measured numbers.
 
 **Backup:** If the sample tap fails, tap **Take or choose a photo** and upload
 any printed price list from the desktop. Real OCR runs. It is slower, about
-fifteen seconds, so narrate the progress bar rather than standing in silence. If
-both fail, PITCH.html slide 3 is this screen as a static visual.
+fifteen seconds — and the progress bar is determinate, so read the percentage out
+as it climbs rather than standing in silence. If both fail, PITCH.html slide 3 is
+this screen as a static visual.
 
 ---
 
@@ -149,6 +172,11 @@ what you claimed.
 read the string out. Reading the raw `upi://pay?pa=...&am=...` aloud is almost as
 convincing as a scan, because it is checkable.
 
+**If the storefront will not load** on the judge's phone, it says so honestly
+rather than spinning: after twelve seconds you get **This shop isn't available**
+with a **Try again** button. Tap it once, and if the venue network is the problem
+say so — an empty skeleton looks like a bug, a stated timeout does not.
+
 ---
 
 ## 2:20 to 3:20 · Payments keep the register
@@ -165,7 +193,10 @@ the taps.
 5. On the success screen, tap **View payment**.
 6. Scroll to **What did this customer buy?**
 7. Tap **Confirm items**.
-8. Go back to **Manage** and scroll to **Restock**.
+8. Back to **Manage**, then scroll to **Restock**. There is no bottom tab bar on
+   a payment receipt, so this is two taps of the header back arrow to reach
+   Home, then the **Business** tab → **Ek Photo Dukaan** (one row, no
+   scrolling). Rehearse this hop; it is the only fiddly navigation in the run.
 
 **Say, at step 4:**
 
@@ -177,6 +208,10 @@ the taps.
 > But forty five is not just forty five. It is a fingerprint of a basket. So we
 > search every combination of her own prices that adds up to exactly forty five.
 > Fourteen combinations searched. Exactly one fits. One Thums Up.
+
+**Point at the line under the suggestion.** It reads **92% confidence · 1 item ·
+1 unit**, with a filled dot beside it — a number and a shape, not a colour, so
+the strength of the claim survives a projector and a colour-blind judge.
 
 **Open "How this was inferred" and point at it:**
 
@@ -199,7 +234,10 @@ the taps.
 
 **Point at:** The forecast row, specifically the range changing. If you rehearsed
 it, you know the number was 2 to 3 before and 1 to 2 after. Say both numbers out
-loud so the change is audible, not just visible.
+loud so the change is audible, not just visible. The right-hand figure moves too:
+before the confirmation it reads **Low on shelf**, because nothing had been
+attributed yet and it refuses to invent a rate; after it reads **~2 days**. That
+is the honest version of a forecast appearing out of nowhere.
 
 **What NOT to say:**
 
@@ -215,10 +253,17 @@ loud so the change is audible, not just visible.
 > nothing sums exactly it refuses to guess and asks her to pick. That refusal is
 > the feature.
 
-**Backup:** If Collect fails, open any existing ₹45 payment from the Payments
-list and go straight to the basket card. The attribution is the beat, not the
-collection. If the whole API is down, PITCH.html slide 4 is this loop in four
-steps.
+**Backup:** If the Collect screen misbehaves, take the other route to the same
+₹45: **My QR** → type `45` under *Add an amount to the QR* → **Record a counter
+payment**, then open the top row of **Payments**. You land on the same receipt
+with the same basket card.
+
+Do not go looking for a ₹45 payment in the seeded list — there isn't one. The
+seeded tickets are other amounts, so the ₹45 has to be collected live by one of
+those two routes. If you must fall back to a seeded payment, open any successful
+one and talk through the mechanism, but say out loud that the basket and
+confidence on screen are that amount's, not the ₹45 numbers you quoted. If the
+whole API is down, PITCH.html slide 4 is this loop in four steps.
 
 ---
 
@@ -253,7 +298,7 @@ steps.
 **Point at:** The order card. Read the note on it out loud, because it is your
 honesty and your credibility in one line:
 
-> "Merchant approved. Simulated Paytm vendor payout queued, no bank API called."
+> "Merchant approved. Simulated Paytm vendor payout queued; no bank API called."
 > That is on our screen, not in our footnotes.
 
 **Then the punchline. Slow down. This is the biggest thing you say:**
@@ -294,6 +339,13 @@ Switch to **PITCH.html slide 6**. Do not read the slide. Talk over it.
 >
 > Every one of those is labelled on the screen it appears on, because a merchant
 > who cannot tell a guess from a fact will stop trusting the whole app.
+
+**If you have ten spare seconds, show it rather than say it.** Switch to the app,
+**Profile → About**. That is the one place the affiliation disclosure lives, in
+two sentences: independent hackathon prototype, not affiliated with or endorsed
+by Paytm; payments, settlements and supplier payouts simulated on-device, with no
+live Paytm, bank or WhatsApp connection and no real money moving. Reading our own
+words off our own screen beats paraphrasing them.
 
 **Why you volunteer this:** a judge who finds a hidden mock stops listening to
 everything else. A judge who watches you name your own mocks starts trusting the
@@ -338,6 +390,18 @@ Print this. One line each. Answer, then stop.
 > No, and we say so in the app. This is an unofficial prototype built on the
 > Paytm for Business pattern. Nothing here is endorsed by Paytm and no live Paytm
 > API is connected.
+
+**"That reference on the receipt — is that a real UPI transaction ID?"**
+> No, and the field does not claim to be one. It is labelled **App payment
+> reference** and the value is prefixed `EPD-`, because we generate it ourselves.
+> A real UPI transaction ID comes back from the network and we never contact the
+> network. Nothing in this build dresses up our own reference as an NPCI one.
+
+**"Where do you say you are not Paytm?"**
+> **Profile → About**, in the app, in two sentences. Independent hackathon
+> prototype, not affiliated with or endorsed by Paytm; payments and payouts
+> simulated on-device; no live Paytm, bank or WhatsApp connection. Individual
+> screens then label their own simulated parts where those parts appear.
 
 **"Is this real OCR, or real AI?"**
 > The OCR is real and runs on the device with no server call. The basket solver is
@@ -404,15 +468,20 @@ Tape this to the laptop.
 
 ```
 0:00  400 items. Every app says type them. Two hours she does not have.
-0:40  Home > Ek Photo Dukaan > Meena's kirana shelf > Manage
+0:40  Home > scroll to MORE FOR YOUR BUSINESS > Ek Photo Dukaan
+      > Meena's kirana shelf > Manage
       "Twelve items. She typed nothing." Point: Thums Up, 2 to 3 bottles.
+      Explain row on the judged path = "How this catalog was made" (sample).
 1:40  Preview > Pay this shop. JUDGE SCANS.
       "Real upi://pay. Payee is a placeholder, so no money moves."
-2:20  Home > Collect > 45 > View payment > Confirm items > Manage > Restock
+2:20  Home > Collect > 45 > View payment > Confirm items
+      > back x2 > Business tab > Ek Photo Dukaan > Restock
       "Fourteen combinations, one fits. 2 to 3 became 1 to 2."
-3:20  Add supplier bill > Approve reorder > WhatsApp > Mark as paid
+      Line under the basket: 92% confidence · 1 item · 1 unit.
+3:20  Add supplier bill > Use this sample bill instead > Approve reorder
+      > Send on WhatsApp > Mark as paid and received
       "Ten thousand shops, one purchase order Paytm can finance."
-4:10  Slide 6. Name every mock before they ask.
+4:10  Slide 6. Name every mock before they ask. Profile > About if asked.
 4:30  Slide 7. "Only Paytm sees the payments." Then stop.
 ```
 
@@ -425,13 +494,15 @@ Tape this to the laptop.
 | Combinations searched for ₹45 | 14 |
 | Baskets that sum exactly | 1, being one Thums Up 750 ml |
 | Basket confidence, and its cap | 92 percent, capped at 92 |
-| Thums Up before the sale | about 2 to 3 left |
+| Line printed under the basket | `92% confidence · 1 item · 1 unit` |
+| Thums Up before the sale | about 2 to 3 left, no days-of-cover figure yet |
 | Thums Up after the sale | about 1 to 2 left, roughly 2 days of cover |
 | Forecast confidence cap | 85 percent |
-| Items flagged for reorder | 4 |
+| Items flagged for reorder | 4 — Aashirvaad Atta, Fortune Oil, Thums Up, Amul Milk |
 | Supplier | Sri Balaji Distributors |
 | Reorder value | ₹7,175 |
 | Public dukaan route | `/#/dukaan/meena-kirana` |
+| Receipt reference field | **App payment reference**, value `EPD-…` — ours, not NPCI's |
 
 **Three sentences that carry the whole pitch.** If you forget everything else,
 say these.

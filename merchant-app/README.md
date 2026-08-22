@@ -20,12 +20,12 @@ One Vite process serves the React UI and the in-memory REST API.
 
 ## Demo flow
 
-1. Profile → **Reset to sample data**.
-2. Home → **Ek Photo Dukaan**.
+1. Profile → **Advanced** → **Reset to sample data** (the developer affordances live in that collapsed section).
+2. Home → scroll to **More for your business** → **Ek Photo Dukaan**. It sits below today's sales, the Collect / My QR pair and the settlement balance; the **Business** tab has the same entry as a one-tap row.
 3. Use a labelled **sample shop** (repeatable fixture — this is the judged tap), or run real on-device OCR by photographing a printed rate card or tapping a **sample photo**.
 4. Review / edit prices and availability.
 5. Preview `/#/dukaan/meena-kirana`. Show QR, copy link, WhatsApp draft.
-6. Add the matching **sample supplier bill**. Collect ₹45 and confirm the Thums Up basket.
+6. Add the matching **sample supplier bill** (Sri Balaji Distributors, ₹7,175). Collect ₹45 and confirm the Thums Up basket — one exact basket, 92% confidence.
 7. Approve reorder, open the WhatsApp draft, mark paid/received (simulated).
 8. Reset again.
 
@@ -69,6 +69,8 @@ Local Vite middleware and the Vercel `api/index.ts` function share `server/demoA
 - UPI QR construction is **real**; money moves only if `VITE_MERCHANT_VPA` is a real handle.
 - Sample **shops** are **fixtures** (rows we wrote, shown next to a drawing). A user-supplied photo and the two sample **photos** all use **real on-device OCR**, with no fixture behind them — `node server/verifySamplePhotoOcr.mjs` prints what they actually read.
 - Stock is a **range / heuristic**, never a fake exact count.
+- Receipt identifiers are **ours**: the field is labelled **App payment reference** (`EPD-…`), not “UPI transaction ID”, and settlement refs are `EPD-STL-…`. No NPCI identifier is implied anywhere.
+- The affiliation disclosure is stated in full at **Profile → About**; each screen labels its own simulated part where it appears.
 - WhatsApp is a `wa.me` draft, not Cloud API send.
 - Without Redis, Vercel state is per-instance. `/api/health` reports the mode.
 - No auth, multi-merchant tenancy, live Paytm webhooks, or production hardening.

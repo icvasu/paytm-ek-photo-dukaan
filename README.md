@@ -2,7 +2,7 @@
 
 **One photo → a digital dukaan a kirana owner will actually use.**
 
-Unofficial prototype for the Paytm AI Hackathon (Hyderabad) · Theme 2: *AI for Small Businesses*. **Not affiliated with or endorsed by Paytm.** No production credentials. In-app labelling stays **PROTOTYPE**.
+Unofficial prototype for the Paytm AI Hackathon (Hyderabad) · Theme 2: *AI for Small Businesses*. **Not affiliated with or endorsed by Paytm.** No production credentials. The app states this in **Profile → About**, and every simulated or sampled surface is labelled where it appears.
 
 Every inventory app starts by asking the owner to type items, prices and stock. A person with a queue at the counter will not do that. We never ask. Photograph the printed rate card (or start from a labelled sample shop), review the catalog, share a customer price-list QR, then let Paytm amounts you already collect become restock signal.
 
@@ -15,7 +15,7 @@ Payments are the **base rail**, not the pitch.
   <img src="merchant-app/docs/screens/public-dukaan.png" alt="Public customer price list with UPI QR" width="280" />
 </p>
 
-More captures: [`merchant-app/docs/screens/`](merchant-app/docs/screens/).
+More captures: [`merchant-app/docs/screens/`](merchant-app/docs/screens/) — every route, plus `journey-01-empty-dukaan.png` through `journey-14-qr.png`, which is the judged run in order.
 
 ---
 
@@ -25,12 +25,14 @@ Phone-width browser (~390px). From `merchant-app/`: `npm install && npm run dev`
 
 | Min | Show |
 | --- | --- |
-| 0:00 | **Profile → Reset to sample data.** Home: Meena’s seeded sales, empty dukaan. |
-| 0:30 | Tap **Ek Photo Dukaan**. Use the printed rate-card **sample** (fast, labelled) *or* photograph a real card (on-device OCR). |
+| 0:00 | **Profile → Advanced → Reset to sample data.** Home: Meena’s seeded sales, empty dukaan. |
+| 0:30 | Scroll Home to **More for your business** → tap **Ek Photo Dukaan**. Use the **Meena’s kirana shelf** sample (fast, labelled fixture — this is the judged tap) *or* prove real OCR with a **sample photo** / your own printed card. |
 | 1:30 | Review prices, toggle availability, preview `/#/dukaan/meena-kirana`. Show QR / copy / WhatsApp draft. |
-| 2:30 | **Add supplier bill** (sample Sharma Traders). Collect **₹45**, confirm the Thums Up basket on the receipt. |
-| 3:30 | **Approve reorder** → WhatsApp draft → **Mark as paid and received** (simulated payout). Catalog ranges update. |
-| 4:30 | Insights + honesty: “no bank API, no WhatsApp Cloud send, stock is a range.” Reset again. |
+| 2:30 | **Add supplier bill** → **Use this sample bill instead** (Sri Balaji Distributors, ₹7,175). Collect **₹45**, confirm the Thums Up basket on the receipt. |
+| 3:30 | **Approve reorder** → WhatsApp draft → **Mark as paid and received** (simulated payout). Catalog ranges update: Thums Up 2–3 → 1–2 left, ~2 days cover. |
+| 4:30 | Insights + honesty: “no bank API, no WhatsApp Cloud send, stock is a range.” Point at **Profile → About**. Reset again. |
+
+The judged sample is **Meena’s kirana shelf**, not the printed rate card: on the kirana catalog ₹45 has exactly one basket at 92% confidence, and on the rate card it has eight at 28%. Using the rate card turns the strongest beat in the demo into a hedge.
 
 Full click path: [`merchant-app/docs/DEMO.md`](merchant-app/docs/DEMO.md). Spoken script: [`merchant-app/docs/SPEAKER_SCRIPT.md`](merchant-app/docs/SPEAKER_SCRIPT.md).
 
@@ -58,7 +60,7 @@ The deployable app **is `merchant-app/`**, not this repository root. On Vercel s
 
 | Route | Screen |
 | --- | --- |
-| `/#/` | Home — sales, Collect / My QR, Ek Photo Dukaan CTA |
+| `/#/` | Home — today’s sales, Collect / My QR, settlement balance, then Ek Photo Dukaan under *More for your business* |
 | `/#/dukaan/scan` | One photo or labelled sample shop → catalog |
 | `/#/dukaan/manage` | Edit items, share QR/link/WhatsApp, restock, reorder |
 | `/#/dukaan/invoice` | Supplier bill (sample matching the loaded shop) |
@@ -85,6 +87,8 @@ React 19 + TypeScript + Vite 8 · hash router · Zustand · Recharts · `qrcode.
 | Catalog from a **sample shop** | **Fixture** — pre-written rows, labelled as such. Use this on stage. |
 | UPI QR | **Real** NPCI `upi://pay` URI. Money moves only if you set a real VPA (`VITE_MERCHANT_VPA`). Default is a fake placeholder. |
 | Payment received / settlement / refund / supplier payout | **Simulated** local ledger. No Paytm API, no webhook, no bank. |
+| Payment references on a receipt | **Ours.** Labelled **App payment reference** (`EPD-…`), never “UPI transaction ID”. Settlement refs are `EPD-STL-…`. No NPCI identifier is implied. |
+| Affiliation disclosure | Stated in full at **Profile → About**; per-screen labels cover each simulated part where it appears. |
 | WhatsApp | Opens a `wa.me` draft. We do not send via Cloud API. |
 | Stock | **Range + heuristic**, never a fake exact count. Demand model is exponential smoothing with stated limits. |
 | Persistence on Vercel | Instance memory unless Redis env vars are set. `/api/health` reports the mode. Public `meena-kirana` always seeds a demo catalog on a cold start. |
@@ -98,8 +102,8 @@ Do not say “Paytm is live” or “the model learned today.”
 | Doc | Why |
 | --- | --- |
 | [`merchant-app/docs/PITCH.html`](merchant-app/docs/PITCH.html) | Open in a browser — 16:9 pitch deck |
-| [`merchant-app/docs/DEMO.md`](merchant-app/docs/DEMO.md) | 8–12 step walkthrough + API smoke |
-| [`merchant-app/docs/SPEAKER_SCRIPT.md`](merchant-app/docs/SPEAKER_SCRIPT.md) | What to say in 3 minutes |
+| [`merchant-app/docs/DEMO.md`](merchant-app/docs/DEMO.md) | 16-step walkthrough + API smoke + honesty checks |
+| [`merchant-app/docs/SPEAKER_SCRIPT.md`](merchant-app/docs/SPEAKER_SCRIPT.md) | What to say, and what to tap, in 5 minutes |
 | [`merchant-app/docs/JUDGE_DEFENSE.md`](merchant-app/docs/JUDGE_DEFENSE.md) | Likely questions, honest answers |
 | [`merchant-app/docs/FEATURES.md`](merchant-app/docs/FEATURES.md) | Every user-facing feature, REAL vs SIMULATED |
 | [`merchant-app/docs/ARCHITECTURE.md`](merchant-app/docs/ARCHITECTURE.md) | Photo → catalog → QR → restock |
