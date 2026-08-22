@@ -153,7 +153,7 @@ function PaymentDetailPage() {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const suggestedBasket = txn && data.catalog ? decomposeBasket(txn.amountPaise, data.catalog.items) : []
-  const existingBasket = data.basketAssignments.find((assignment) => assignment.transactionId === txn?.id)
+  const existingBasket = (data.basketAssignments ?? []).find((assignment) => assignment.transactionId === txn?.id)
   if (!txn) return <><PageHeader title="Payment details" back /><main className="page"><EmptyState icon={<CircleAlert />} title="Payment not found" text="This transaction does not exist." /></main></>
   const doRefund = async () => {
     setBusy(true); setMessage('')
@@ -200,7 +200,7 @@ function PaymentDetailPage() {
             : <p>No exact catalog basket matches {formatINR(txn.amountPaise)}. Collect a catalog-priced payment, then attach it here.</p>}
         <small>Merchant-confirmed heuristic; Paytm amount alone does not identify every basket.</small>
       </section>}
-      {message && <div className={`alert ${message.includes('success') ? 'success' : 'error'}`}>{message}</div>}
+      {message && <div className={`alert ${/fail|could not/i.test(message) ? 'error' : 'success'}`}>{message}</div>}
       {txn.status === 'success' && !txn.settlementId && <button className="outline-danger full" disabled={busy} onClick={doRefund}>{busy ? 'Processing refund…' : 'Refund payment'}</button>}
       {txn.status === 'pending' && <div className="button-pair"><button className="secondary" disabled={busy} onClick={() => void doConfirm(false)}>Mark failed</button><button className="primary" disabled={busy} onClick={() => void doConfirm(true)}>{busy ? 'Updating…' : 'Confirm success'}</button></div>}
     </main>
@@ -396,9 +396,14 @@ function DukaanScanPage() {
 
 function SupplierInvoicePage() {
   const navigate = useNavigate()
+  const catalog = useMerchantStore((s) => s.catalog)
   const saveInvoice = useMerchantStore((s) => s.saveSupplierInvoice)
   const [stage, setStage] = useState<'idle' | 'reading' | 'saving' | 'error'>('idle')
   const [error, setError] = useState('')
+  const source = (catalog?.sourceImageName ?? '').toLowerCase()
+  const teaShop = catalog?.items.some((item) => item.id === 'chai' || item.id === 'samosa') || /tea|counter|rate/.test(source)
+  const sampleName = teaShop ? 'tea-counter-invoice.jpg' : 'meena-kirana-invoice.jpg'
+  const sampleLabel = teaShop ? 'Use Sharma Traders demo bill' : 'Use Sri Balaji demo bill'
   const process = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       setError('Choose an invoice image.')
@@ -417,6 +422,7 @@ function SupplierInvoicePage() {
       setStage('error')
     }
   }
+  if (!catalog) return <><PageHeader title="Supplier invoice" back /><main className="page"><EmptyState icon={<ReceiptText />} title="Scan the shop first" text="Photo one builds the catalog. Photo two adds the supplier bill." /><button className="primary full" onClick={() => navigate('/dukaan/scan')}>Scan shop photo</button></main></>
   if (stage === 'reading' || stage === 'saving') return <>
     <PageHeader title="Supplier invoice" back />
     <main className="page centered scan-processing"><div className="spinner" /><small>DEMO VISION · HEURISTIC</small><h1>{stage === 'reading' ? 'Reading supplier bill' : 'Adding stock-in'}</h1><p>{stage === 'reading' ? 'Finding supplier, quantities and unit costs…' : 'Saving supplier and updating catalog ranges…'}</p></main>
@@ -430,7 +436,7 @@ function SupplierInvoicePage() {
         const file = event.target.files?.[0]
         if (file) void process(file)
       }} /></label>
-      <button className="sample-invoice" onClick={() => void process(new File(['demo'], 'tea-counter-invoice.jpg', { type: 'image/jpeg' }))}><ReceiptText /><span><b>Use Sharma Traders demo bill</b><small>4 lines · deterministic offline sample</small></span><ChevronRight /></button>
+      <button className="sample-invoice" onClick={() => void process(new File(['demo'], sampleName, { type: 'image/jpeg' }))}><ReceiptText /><span><b>{sampleLabel}</b><small>4 lines · deterministic offline sample</small></span><ChevronRight /></button>
       <div className="demo-boundary"><Sparkles /><p><b>DEMO heuristic</b><br />Filename mapping, not production OCR. No payable or bank instruction is created automatically.</p></div>
     </main>
   </>
@@ -473,7 +479,7 @@ function DukaanManagePage() {
         <span><Check /></span>
       </section>
       <div className={`vision-note ${catalog.confidence}`}><Sparkles /><p><b>{catalog.confidence === 'starter' ? 'Starter list — please review' : 'Photo read complete'}</b><br />{catalog.readingNote}</p></div>
-      {message && <div className={`alert ${message.endsWith('copied.') ? 'success' : 'error'}`}>{message}</div>}
+      {message && <div className={`alert ${/fail|could not|blocked/i.test(message) ? 'error' : 'success'}`}>{message}</div>}
       <SectionTitle>Catalog / सामान और दाम</SectionTitle>
       <section className="catalog-editor">
         {catalog.items.map((item) => <article key={item.id} className={!item.available ? 'unavailable' : ''}>
@@ -517,9 +523,13 @@ function DukaanManagePage() {
         ? <button className="primary full supplier-action" onClick={() => navigate('/dukaan/invoice')}><ReceiptText />Scan supplier bill / बिल जोड़ें</button>
         : <section className="supplier-card">
           <Truck /><div><small>SUPPLIER · DEMO</small><b>{data.supplier.name}</b><p>{data.supplier.lines.length} invoice lines · normal order {formatINR(data.supplier.normalOrderPaise)}</p></div>
-          <button disabled={busy === 'order' || !reorderForecasts.length} onClick={async () => {
+          <button disabled={busy === 'order'} onClick={async () => {
             setBusy('order')
-            try { await raiseOrder(reorderForecasts.map((forecast) => forecast.skuId)); setMessage('Supplier order queued. Simulated payout note created.') } catch (reason) { setMessage(reason instanceof Error ? reason.message : 'Could not raise order') } finally { setBusy('') }
+            try {
+              const matching = data.supplier!.lines.filter((line) => reorderForecasts.some((forecast) => forecast.skuId === line.skuId)).map((line) => line.skuId)
+              await raiseOrder(matching)
+              setMessage('Supplier order queued. Simulated payout note created.')
+            } catch (reason) { setMessage(reason instanceof Error ? reason.message : 'Could not raise order') } finally { setBusy('') }
           }}>{busy === 'order' ? 'Queuing…' : 'Approve reorder'}</button>
         </section>}
       {latestOrder && <section className={`order-status ${latestOrder.status}`}>

@@ -12,7 +12,7 @@ function visualRange(label: string, flag: 'in_stock' | 'low' | 'out') {
 
 export function buildStockForecasts(data: MerchantStoreData): StockForecast[] {
   if (!data.catalog) return []
-  const assigned = data.basketAssignments
+  const assigned = data.basketAssignments ?? []
   const observedDays = Math.max(1, new Set(data.transactions.map((transaction) => transaction.createdAt.slice(0, 10))).size)
   return data.catalog.items.map((item) => {
     const [visualMin, visualMax] = visualRange(item.stockLabel, item.stockFlag)

@@ -92,7 +92,7 @@ export class DemoVisionService implements VisionService {
   async analyzeInvoice(input: VisionInput): Promise<Omit<SupplierProfile, 'id' | 'lastStockInAt'>> {
     await delay(350)
     const key = input.fileName.toLowerCase()
-    const teaInvoice = key.includes('tea') || key.includes('counter') || key.includes('invoice')
+    const teaInvoice = (key.includes('tea') || key.includes('counter')) && !key.includes('meena') && !key.includes('kirana') && !key.includes('shelf')
     const lines = teaInvoice
       ? [
           { skuId: 'thums-up', itemName: 'Thums Up 750 ml', quantity: 24, unitCostPaise: 3600 },
