@@ -26,7 +26,7 @@ import {
   NoTextFoundError, OcrUnavailableError, analyzePhoto, analyzeSample,
   loadSampleInvoice, sampleShopForCatalog, type OcrPhase,
 } from './services/vision/catalogPipeline'
-import { SAMPLE_SHOPS } from './services/vision/VisionService'
+import { DEFAULT_DUKAAN_SLUG, SAMPLE_SHOPS, buildSeededPublicCatalog } from './services/vision/VisionService'
 import { NoInvoiceFoundError, analyzeInvoicePhoto } from './services/vision/invoicePipeline'
 import { solveBasket, unitsSoldBySku } from './domain/basketSolver'
 import {
@@ -439,7 +439,9 @@ function PaymentDetailPage() {
         <Detail label="Customer" value={txn.customerName} />
         <Detail label="Payment method" value={methodName[txn.paymentMethod]} />
         <Detail label="Order reference" value={txn.referenceId} mono />
-        {txn.upiTxnId && <Detail label="UPI transaction ID" value={txn.upiTxnId} mono />}
+        {/* Labelled as this app's own reference, not an NPCI one, so the value
+            does not have to carry the disclaimer in its prefix. */}
+        {txn.upiTxnId && <Detail label="App payment reference" value={txn.upiTxnId} mono />}
         <Detail label="Settlement" value={txn.settlementId ? `Settled · ${txn.settlementId}` : txn.status === 'success' ? 'Available to settle' : 'Not applicable'} />
         {txn.note && <Detail label="Note" value={txn.note} />}
       </section>
@@ -1207,9 +1209,11 @@ function DukaanManagePage() {
 function PublicDukaanPage() {
   const { slug } = useParams()
   const data = useData()
-  const [catalog, setCatalog] = useState<DukaanCatalog | null>(
-    data.catalog?.slug === slug ? data.catalog : null,
-  )
+  const [catalog, setCatalog] = useState<DukaanCatalog | null>(() => {
+    if (data.catalog?.slug === slug) return data.catalog
+    if (slug === DEFAULT_DUKAAN_SLUG) return buildSeededPublicCatalog(data.merchant.id, data.demoClock)
+    return null
+  })
   const [catalogStatus, setCatalogStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [category, setCategory] = useState('all')
   const [query, setQuery] = useState('')
@@ -1236,8 +1240,17 @@ function PublicDukaanPage() {
       })
       .catch((error: unknown) => {
         // An abort from unmount must stay silent; an abort from the timeout is a
-        // real failure the customer needs to see.
+        // real failure — then we still try the seeded shop so a judge never sees
+        // a dead public QR.
         if (!timedOut && error instanceof DOMException && error.name === 'AbortError') return
+        const fallback = slug === DEFAULT_DUKAAN_SLUG
+          ? buildSeededPublicCatalog(data.merchant.id, data.demoClock)
+          : data.catalog?.slug === slug ? data.catalog : null
+        if (fallback) {
+          setCatalog(fallback)
+          setCatalogStatus('ready')
+          return
+        }
         setCatalogStatus('error')
       })
       .finally(() => globalThis.clearTimeout(timer))
@@ -1245,7 +1258,7 @@ function PublicDukaanPage() {
       globalThis.clearTimeout(timer)
       controller.abort()
     }
-  }, [slug, attempt])
+  }, [slug, attempt, data.merchant.id, data.demoClock, data.catalog])
 
   const shopName = catalog?.title ?? data.merchant.businessName
   const intent = useMemo(() => shopIntent(data.merchant.businessName), [data.merchant.businessName])
@@ -1794,15 +1807,29 @@ const tabs = [
   { to: '/profile', label: 'Profile', icon: <Settings /> },
 ]
 
+function isPublicShopPath(pathname: string) {
+  return /^\/dukaan\/(?!scan$|invoice$|manage$)[^/]+/.test(pathname)
+}
+
 function AppShell() {
   const location = useLocation()
   const bootStatus = useMerchantStore((state) => state.bootStatus)
   const actionError = useMerchantStore((state) => state.actionError)
   const syncFromApi = useMerchantStore((state) => state.syncFromApi)
+  const isPublicShop = isPublicShopPath(location.pathname)
   /* The store starts 'idle' and returns to 'idle' once synced, so the first
      paint would otherwise flash an empty dukaan before the data lands. */
   const [firstSyncDone, setFirstSyncDone] = useState(false)
-  useEffect(() => { void syncFromApi().finally(() => setFirstSyncDone(true)) }, [syncFromApi])
+  useEffect(() => {
+    // A customer (or judge) opening the public QR must never wait on — or die
+    // from — the merchant hydrate. The storefront has its own catalog fetch
+    // and a client-side seed fallback.
+    if (isPublicShop) {
+      setFirstSyncDone(true)
+      return
+    }
+    void syncFromApi().finally(() => setFirstSyncDone(true))
+  }, [syncFromApi, isPublicShop])
 
   /* Move focus to the main region after every route change. */
   useEffect(() => {
@@ -1812,7 +1839,7 @@ function AppShell() {
 
   const hideNav = ['/collect', '/qr', '/search', '/notifications', '/insights', '/settlements', '/customers', '/dukaan'].some((p) => location.pathname.startsWith(p)) || /^\/payments\/.+/.test(location.pathname)
 
-  if (bootStatus === 'loading' || !firstSyncDone) {
+  if (!isPublicShop && (bootStatus === 'loading' || !firstSyncDone)) {
     return <div className="device-shell"><div className="app-surface no-nav">
       <PageHeader title="Loading" brand />
       <Page>
@@ -1823,7 +1850,7 @@ function AppShell() {
       </Page>
     </div></div>
   }
-  if (bootStatus === 'error') {
+  if (!isPublicShop && bootStatus === 'error') {
     return <div className="device-shell"><div className="app-surface no-nav">
       <PageHeader title="Can’t connect" brand />
       <Page>

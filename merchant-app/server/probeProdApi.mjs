@@ -1,14 +1,14 @@
 /**
  * Adversarial probe of the *production* API path.
  *
- * Mounts `api/[...path].ts` (the Vercel catch-all) on a bare node:http server,
+ * Mounts `api/index.ts` (the Vercel function) on a bare node:http server,
  * with no Vite middleware in front of it. Vite's dev server answers CORS
  * preflights itself, which hides whether the function does — this does not.
  *
  * Run with:  npx vite-node server/probeProdApi.mjs
  */
 import { createServer } from 'node:http'
-import handler from '../api/[...path].ts'
+import handler from '../api/index.ts'
 
 const server = createServer((req, res) => {
   void handler(req, res)

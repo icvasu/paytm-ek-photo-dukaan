@@ -1,4 +1,7 @@
-import type { CatalogItem, SupplierInvoiceLine, SupplierProfile, VisionResult } from '../../types/models.ts'
+import type { CatalogItem, DukaanCatalog, SupplierInvoiceLine, SupplierProfile, VisionResult } from '../../types/models.js'
+
+/** The slug the demo QR encodes. Must always resolve, even when the API is down. */
+export const DEFAULT_DUKAAN_SLUG = 'meena-kirana'
 
 export const MEENA_SHELF_ITEMS: CatalogItem[] = [
   item('tata-salt', 'Tata Salt 1 kg', 2800, 'in_stock', '12–18 packs', 'Staples'),
@@ -29,6 +32,32 @@ const TEA_COUNTER_ITEMS: CatalogItem[] = [
   item('sandwich', 'Veg Sandwich', 6000, 'in_stock', '5–8 plates', 'Snacks'),
   item('combo', 'Chai + Samosa Combo', 2200, 'in_stock', 'Ready', 'Combos'),
 ]
+
+/** Sample storefront the public QR always opens, client or server. */
+export function buildSeededPublicCatalog(merchantId: string, clock: string): DukaanCatalog {
+  return {
+    id: 'dukaan_meena',
+    merchantId,
+    title: 'Meena Kirana Digital Dukaan',
+    slug: DEFAULT_DUKAAN_SLUG,
+    items: MEENA_SHELF_ITEMS.map((entry) => ({ ...entry })),
+    sourceImageName: 'meena-kirana-shelf.svg',
+    sourceKind: 'demo',
+    confidence: 'high',
+    readingNote: 'Sample shop rows that ship with the prototype, so a scanned QR always opens something. Stock is a visual range, not an exact count.',
+    createdAt: clock,
+    updatedAt: clock,
+    provenance: {
+      method: 'sample_photo',
+      engine: null,
+      linesRead: 0,
+      rowsAccepted: MEENA_SHELF_ITEMS.length,
+      rowsRejected: 0,
+      meanOcrConfidencePct: null,
+      durationMs: null,
+    },
+  }
+}
 
 function item(
   id: string,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { OcrLine } from './ocr.ts'
-import { parseInvoiceLines } from './parseInvoice.ts'
+import type { OcrLine } from './ocr.js'
+import { parseInvoiceLines } from './parseInvoice.js'
 
 const lines = (...texts: string[]): OcrLine[] => texts.map((text) => ({ text, confidence: 88 }))
 

@@ -6,12 +6,12 @@
  * taken on trust.
  */
 import { describe, expect, it } from 'vitest'
-import { collectIntent, parseUpiIntent, shopIntent } from './services/paytm/upi.ts'
-import { solveBasket } from './domain/basketSolver.ts'
-import { MEENA_SHELF_ITEMS } from './services/vision/VisionService.ts'
-import { parseCatalogLines } from './services/vision/parseCatalog.ts'
-import { resolveItems } from './services/vision/resolveItems.ts'
-import { estimateDemand } from './intelligence/demand.ts'
+import { collectIntent, parseUpiIntent, shopIntent } from './services/paytm/upi.js'
+import { solveBasket } from './domain/basketSolver.js'
+import { MEENA_SHELF_ITEMS } from './services/vision/VisionService.js'
+import { parseCatalogLines } from './services/vision/parseCatalog.js'
+import { resolveItems } from './services/vision/resolveItems.js'
+import { estimateDemand } from './intelligence/demand.js'
 
 const SHOP = 'Meena Kirana & General Store'
 

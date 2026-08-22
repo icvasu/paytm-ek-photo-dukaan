@@ -1,5 +1,5 @@
-import { DEMO_NOW_ISO, addDays, parseISO, startOfDay, toISO } from '../lib/dates.ts'
-import { rupeesToPaise } from '../lib/money.ts'
+import { DEMO_NOW_ISO, addDays, parseISO, startOfDay, toISO } from '../lib/dates.js'
+import { rupeesToPaise } from '../lib/money.js'
 import type {
   AppNotification,
   Customer,
@@ -9,7 +9,7 @@ import type {
   Settlement,
   Transaction,
   TransactionStatus,
-} from '../types/models.ts'
+} from '../types/models.js'
 
 function mulberry32(seed: number) {
   return function rand() {
@@ -208,7 +208,7 @@ export function buildSeed(): MerchantStoreData {
       settledAt: null,
       settlementId: null,
       referenceId: `${created.getFullYear()}${String(created.getMonth() + 1).padStart(2, '0')}${String(created.getDate()).padStart(2, '0')}${String(seq).padStart(6, '0')}`,
-      upiTxnId: args.method === 'upi' && !failed ? `DEMO-UPI-${seq}${created.getDate()}${created.getHours()}` : null,
+      upiTxnId: args.method === 'upi' && !failed ? `EPD-${seq}${created.getDate()}${created.getHours()}` : null,
       note: args.note,
       failureReason: failed
         ? pick(rand, [

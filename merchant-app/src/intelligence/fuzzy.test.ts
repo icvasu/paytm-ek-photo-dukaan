@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { editSimilarity, levenshtein, similarity, tokenCoverage, tokenSetRatio } from './fuzzy.ts'
-import { dailyDecayForHalfLife, exponentiallyWeightedRate } from './demand.ts'
-import { lexiconAliases, priceBandFit, PRODUCT_LEXICON } from './lexicon.ts'
-import { bestMatch } from './fuzzy.ts'
-import type { LexiconEntry } from './lexicon.ts'
+import { editSimilarity, levenshtein, similarity, tokenCoverage, tokenSetRatio } from './fuzzy.js'
+import { dailyDecayForHalfLife, exponentiallyWeightedRate } from './demand.js'
+import { lexiconAliases, priceBandFit, PRODUCT_LEXICON } from './lexicon.js'
+import { bestMatch } from './fuzzy.js'
+import type { LexiconEntry } from './lexicon.js'
 
 describe('levenshtein', () => {
   it('matches known distances', () => {

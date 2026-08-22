@@ -1,4 +1,4 @@
-import type { OcrLine } from './ocr.ts'
+import type { OcrLine } from './ocr.js'
 
 export interface ParsedItem {
   name: string

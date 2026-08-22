@@ -1,5 +1,5 @@
-import type { OcrLine } from './ocr.ts'
-import type { RejectedLine } from './parseCatalog.ts'
+import type { OcrLine } from './ocr.js'
+import type { RejectedLine } from './parseCatalog.js'
 
 /**
  * Reads a supplier bill out of real OCR lines.

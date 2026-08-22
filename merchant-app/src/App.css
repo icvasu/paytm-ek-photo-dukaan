@@ -1143,8 +1143,8 @@
 }
 
 .search-box:focus-within {
-  border-color: var(--brand-cyan);
-  box-shadow: 0 0 0 3px rgb(0 186 242 / 22%);
+  border-color: var(--brand-navy);
+  box-shadow: 0 0 0 4px rgb(0 186 242 / 45%);
 }
 
 .search-box svg {
@@ -1280,8 +1280,8 @@
 }
 
 .amount-input:focus-within {
-  border-color: var(--brand-cyan);
-  box-shadow: 0 0 0 3px rgb(0 186 242 / 22%);
+  border-color: var(--brand-navy);
+  box-shadow: 0 0 0 4px rgb(0 186 242 / 45%);
 }
 
 .amount-input span {
@@ -1313,8 +1313,8 @@
 }
 
 .input-prefix:focus-within {
-  border-color: var(--brand-cyan);
-  box-shadow: 0 0 0 3px rgb(0 186 242 / 22%);
+  border-color: var(--brand-navy);
+  box-shadow: 0 0 0 4px rgb(0 186 242 / 45%);
 }
 
 .input-prefix input {

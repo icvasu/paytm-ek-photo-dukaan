@@ -11,7 +11,7 @@ import {
   sanitizeTxnRef,
   shopIntent,
   UpiIntentError,
-} from './upi.ts'
+} from './upi.js'
 
 const SHOP = 'Meena Kirana & General Store'
 

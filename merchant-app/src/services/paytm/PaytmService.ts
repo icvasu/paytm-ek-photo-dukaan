@@ -1,7 +1,7 @@
-import type { CollectPaymentInput, PaymentMethod, Transaction } from '../../types/models.ts'
-import { createId, paytmStyleTxnId } from '../../lib/ids.ts'
-import { rupeesToPaise } from '../../lib/money.ts'
-import { apiJson } from '../../lib/net.ts'
+import type { CollectPaymentInput, PaymentMethod, Transaction } from '../../types/models.js'
+import { createId, paytmStyleTxnId } from '../../lib/ids.js'
+import { rupeesToPaise } from '../../lib/money.js'
+import { apiJson } from '../../lib/net.js'
 
 export interface ChargeRequest {
   merchantId: string
@@ -86,9 +86,9 @@ export class DemoPaytmService implements PaytmService {
     return {
       ok: true,
       status: 'success',
-      // Prefixed so the screen that labels this a "UPI transaction ID" cannot
-      // be mistaken for an NPCI reference. No UPI network is contacted.
-      providerRef: `DEMO-UPI-${Date.now().toString().slice(-10)}`,
+      // Not shaped like an NPCI reference, and the screen labels it "App payment
+      // reference" rather than a UPI transaction ID. No UPI network is contacted.
+      providerRef: `EPD-${Date.now().toString().slice(-10)}`,
       failureReason: null,
       processedAt,
     }
@@ -103,7 +103,7 @@ export class DemoPaytmService implements PaytmService {
       ok: true,
       // Deliberately not shaped like a bank UTR. Nothing here talks to a bank,
       // and a realistic looking reference would imply otherwise.
-      bankRef: `DEMO-STL-${Date.now().toString().slice(-8)}`,
+      bankRef: `EPD-STL-${Date.now().toString().slice(-8)}`,
       completedAt: new Date().toISOString(),
     }
   }

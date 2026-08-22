@@ -3,7 +3,7 @@ import type { Plugin } from 'vite'
 import { buildSeed } from '../src/data/seed.js'
 import { buildInsights } from '../src/intelligence/engine.js'
 import { buildDraftTransaction, DemoPaytmService, applyChargeToDraft } from '../src/services/paytm/PaytmService.js'
-import { MEENA_SHELF_ITEMS } from '../src/services/vision/VisionService.js'
+import { DEFAULT_DUKAAN_SLUG, buildSeededPublicCatalog } from '../src/services/vision/VisionService.js'
 import { createId } from '../src/lib/ids.js'
 import type {
   BasketLine, CatalogItem, CatalogItemSource, CatalogMethod, CatalogProvenance,
@@ -125,33 +125,9 @@ async function saveSharedState() {
   }
 }
 
-/** The slug the demo QR encodes. Must always resolve, even on a cold instance. */
-const DEFAULT_DUKAAN_SLUG = 'meena-kirana'
-
 function seedPublicCatalog() {
   if (db.catalog) return db.catalog
-  db.catalog = {
-    id: 'dukaan_meena',
-    merchantId: db.merchant.id,
-    title: 'Meena Kirana Digital Dukaan',
-    slug: DEFAULT_DUKAAN_SLUG,
-    items: MEENA_SHELF_ITEMS.map((item) => ({ ...item })),
-    sourceImageName: 'meena-kirana-shelf.svg',
-    sourceKind: 'demo',
-    confidence: 'high',
-    readingNote: 'Sample shop rows that ship with the prototype, so a scanned QR always opens something. Stock is a visual range, not an exact count.',
-    createdAt: db.demoClock,
-    updatedAt: db.demoClock,
-    provenance: {
-      method: 'sample_photo',
-      engine: null,
-      linesRead: 0,
-      rowsAccepted: MEENA_SHELF_ITEMS.length,
-      rowsRejected: 0,
-      meanOcrConfidencePct: null,
-      durationMs: null,
-    },
-  }
+  db.catalog = buildSeededPublicCatalog(db.merchant.id, db.demoClock)
   return db.catalog
 }
 

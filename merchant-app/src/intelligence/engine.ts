@@ -1,8 +1,8 @@
-import { dailySalesSeries, deriveDashboard, hourlyActivity, returningShare, successRateByHour } from '../domain/metrics.ts'
-import { formatINR } from '../lib/money.ts'
-import { weekdayName, parseISO } from '../lib/dates.ts'
-import { estimateDemand, type DemandEstimate, type DemandReport } from './demand.ts'
-import type { BusinessInsight, MerchantStoreData, StockForecast } from '../types/models.ts'
+import { dailySalesSeries, deriveDashboard, hourlyActivity, returningShare, successRateByHour } from '../domain/metrics.js'
+import { formatINR } from '../lib/money.js'
+import { weekdayName, parseISO } from '../lib/dates.js'
+import { estimateDemand, type DemandEstimate, type DemandReport } from './demand.js'
+import type { BusinessInsight, MerchantStoreData, StockForecast } from '../types/models.js'
 
 /**
  * Confidence in one forecast, from how much evidence actually backs it.

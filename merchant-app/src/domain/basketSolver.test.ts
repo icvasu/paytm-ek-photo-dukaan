@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { solveBasket, unitsSoldBySku } from './basketSolver.ts'
-import { MEENA_SHELF_ITEMS } from '../services/vision/VisionService.ts'
-import type { CatalogItem } from '../types/models.ts'
+import { solveBasket, unitsSoldBySku } from './basketSolver.js'
+import { MEENA_SHELF_ITEMS } from '../services/vision/VisionService.js'
+import type { CatalogItem } from '../types/models.js'
 
 function item(id: string, name: string, pricePaise: number, available = true): CatalogItem {
   return {

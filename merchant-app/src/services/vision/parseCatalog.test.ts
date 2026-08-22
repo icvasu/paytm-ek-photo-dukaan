@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { parseCatalogLines } from './parseCatalog.ts'
-import type { OcrLine } from './ocr.ts'
+import { parseCatalogLines } from './parseCatalog.js'
+import type { OcrLine } from './ocr.js'
 
 function lines(...values: (string | [string, number])[]): OcrLine[] {
   return values.map((value) =>

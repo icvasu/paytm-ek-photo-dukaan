@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { SAMPLE_SHOPS } from './VisionService.ts'
+import { SAMPLE_SHOPS } from './VisionService.js'
 
 /**
  * Guards the curated demo photos.

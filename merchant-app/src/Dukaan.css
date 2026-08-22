@@ -564,8 +564,8 @@
 }
 
 .price-edit:focus-within {
-  border-color: var(--brand-cyan);
-  box-shadow: 0 0 0 3px rgb(0 186 242 / 22%);
+  border-color: var(--brand-navy);
+  box-shadow: 0 0 0 4px rgb(0 186 242 / 45%);
 }
 
 .price-edit input {

@@ -1,8 +1,8 @@
-import { bestMatch } from '../../intelligence/fuzzy.ts'
-import type { CatalogItem, SupplierInvoiceLine, SupplierProfile } from '../../types/models.ts'
-import { runOcr, OcrUnavailableError, type OcrPhase } from './ocr.ts'
-import type { RejectedLine } from './parseCatalog.ts'
-import { parseInvoiceLines, type ParsedInvoiceLine } from './parseInvoice.ts'
+import { bestMatch } from '../../intelligence/fuzzy.js'
+import type { CatalogItem, SupplierInvoiceLine, SupplierProfile } from '../../types/models.js'
+import { runOcr, OcrUnavailableError, type OcrPhase } from './ocr.js'
+import type { RejectedLine } from './parseCatalog.js'
+import { parseInvoiceLines, type ParsedInvoiceLine } from './parseInvoice.js'
 
 /**
  * Composes the supplier bill pipeline:

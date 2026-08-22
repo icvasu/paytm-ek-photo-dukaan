@@ -1,8 +1,8 @@
-import type { CatalogItem, VisionResult } from '../../types/models.ts'
-import { runOcr, OcrUnavailableError, type OcrOutcome, type OcrPhase } from './ocr.ts'
-import { parseCatalogLines, type ParseOutcome, type RejectedLine } from './parseCatalog.ts'
-import { resolveItems, type ResolvedItem } from './resolveItems.ts'
-import { findSampleShop, loadSampleCatalog, loadSampleInvoice, sampleShopForCatalog } from './VisionService.ts'
+import type { CatalogItem, VisionResult } from '../../types/models.js'
+import { runOcr, OcrUnavailableError, type OcrOutcome, type OcrPhase } from './ocr.js'
+import { parseCatalogLines, type ParseOutcome, type RejectedLine } from './parseCatalog.js'
+import { resolveItems, type ResolvedItem } from './resolveItems.js'
+import { findSampleShop, loadSampleCatalog, loadSampleInvoice, sampleShopForCatalog } from './VisionService.js'
 
 /**
  * Composes the catalog extraction pipeline:

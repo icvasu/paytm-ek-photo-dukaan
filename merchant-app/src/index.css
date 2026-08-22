@@ -180,6 +180,13 @@ textarea {
   border-radius: var(--radius-sm);
 }
 
+/* When a wrapper lights up on :focus-within, the inner field must not draw a
+   second ring inside the first. */
+:where(.amount-input, .search-box, .input-prefix, .price-edit) input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 /* One icon language: Lucide outline, single stroke width everywhere.
    CSS wins over the SVG presentation attribute, so this normalises the set. */
 svg {
