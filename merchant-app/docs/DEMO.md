@@ -10,16 +10,27 @@ For the 5-minute judged run, use [SPEAKER_SCRIPT.md](./SPEAKER_SCRIPT.md). It is
 
 ---
 
-## Pick the right sample shop
+## Pick the right sample
 
-Two fixtures ship with the app, and the choice changes the demo materially.
+Four samples ship with the app, in two groups that make **opposite** claims. Say which group you are in, every time.
+
+**Group 1 — sample shops (FIXTURE).** Drawings, with rows we wrote. Nothing is read from the picture. Fast and identical every run, which is why the judged path lives here.
 
 | Sample | Use it for | Why |
 | --- | --- | --- |
 | **Meena's kirana shelf** | **The judged run.** | ₹45 has exactly **one** basket on this catalog: 1× Thums Up 750 ml, 14 combinations searched, 92% confidence. The attribution beat is unambiguous. |
 | **Printed rate card** | Showing the ambiguous case on purpose | ₹45 has **8** valid baskets here and confidence drops to 28%. Good for "what happens when the amount is not identifiable", bad as the headline. |
 
+**Group 2 — sample photos (REAL OCR).** Photographs, under *or read a sample photo for real*. Tapping one runs tesseract.js on the pixels — the same function the camera button calls. There is no fixture behind either of them, so whatever appears was read from the image.
+
+| Sample | Use it for | What actually happens |
+| --- | --- | --- |
+| **Photo of a printed rate card** | Proving OCR is real without borrowing a judge's phone | 13 lines read at **94%** mean text confidence, **11 of 12** rows kept, all 11 prices exactly as printed. Measure it yourself with `node server/verifySamplePhotoOcr.mjs`. |
+| **Photo of a cluttered shelf** | Proving the app refuses to invent items | **Zero** lines of text. Ends in the no-text refusal state. This is the honest-failure demo, not a bug. |
+
 The seeded merchant is **Meena Kirana & General Store** (owner Meena Reddy), so the kirana shelf is also the consistent story.
+
+> The rate-card photo is deliberately **not** the judged path. Its OCR output has two rows priced ₹45 (Thums Up and Britannia Bread), so ₹45 is ambiguous on that catalog — the right answer for an honesty demo, the wrong one for the headline beat.
 
 ---
 
@@ -27,8 +38,8 @@ The seeded merchant is **Meena Kirana & General Store** (owner Meena Reddy), so 
 
 1. **Reset** — Profile → **Advanced** → **Reset to sample data**. Confirm Home shows Meena's seeded sales and the Ek Photo Dukaan card reads *Turn one photo into your catalog* (no leftover catalog from a previous run).
 2. **Home** — Point to the **Ek Photo Dukaan** shortcut inside the merchant shell and tap it. With no catalog it routes to `/dukaan/scan`; with one it routes to `/dukaan/manage`.
-3. **One photo** — Tap **Meena's kirana shelf** under *or start from a sample shop*. To show real OCR instead, tap **Take or choose a photo** and supply a printed price list; that path runs tesseract.js on-device. Sample selection is by explicit tap only — there is no longer any filename heuristic.
-4. **Honest stages** — For an uploaded photo you see the on-device reading progress. For a sample you see the fixture load. Read the disclosure on Manage: sample rows ship with the prototype and were not read out of the picture.
+3. **One photo** — Tap **Meena's kirana shelf** under *or start from a sample shop*. That is the judged tap; it is the first card and it stays the first card. To show real OCR instead, either tap **Take or choose a photo** with a printed price list, or tap **Photo of a printed rate card** under *or read a sample photo for real* — both run tesseract.js on-device through the same function. Sample selection is by explicit tap only — there is no longer any filename heuristic.
+4. **Honest stages** — For any photo, uploaded or sampled, you see the on-device reading progress and a per-row confidence. For a sample *shop* you see the fixture load instead. Read the disclosure on Manage: fixture rows say they ship with the prototype and were not read out of the picture, while a read says how many lines it got off the image.
 5. **Review stock ranges** — e.g. Thums Up **Running low, 2–3 bottles**; Amul Taaza Milk **Missing today**. These are visual estimates, never observed exact counts.
 6. **Show the work** — Open **How this was read** on Manage. For an uploaded photo it lists engine, lines read, rows accepted and rows rejected. For a sample it says plainly that it is a fixture.
 7. **Edit** — Change one price or toggle availability. Merchant is source of truth.
@@ -51,6 +62,8 @@ The seeded merchant is **Meena Kirana & General Store** (owner Meena Reddy), so 
 ## Timing
 
 Use [SPEAKER_SCRIPT.md](./SPEAKER_SCRIPT.md) for the 5-minute cut. Do not open QR Rakshak, GST, or a chatbot. Sample shops and the seeded payment stream work with no external model and no network.
+
+The sample *photos* also need no external service, but the first read of the session does pull the OCR engine and English model (~6 MB) from our own origin. Tap one once before you present so it is warm; on a hostile venue network a cold read is the slowest thing in the demo.
 
 ---
 
@@ -86,7 +99,9 @@ Without those Redis environment variables, catalog edits and demo payments are k
 
 ## Failure / honesty checks
 
-- Upload a photo with no readable price lines → the scan screen refuses and explains, rather than inventing rows. There is no silent fallback catalog.
+- Tap **Photo of a cluttered shelf** → OCR finds no text at all and the scan screen refuses and explains, rather than inventing rows. This is the one-tap version of the check below, and it needs no props.
+- Upload a photo with no readable price lines → same refusal. There is no silent fallback catalog.
+- Tap **Photo of a printed rate card**, then open **How this was read** on Manage → engine, 13 lines, rows kept, rows skipped, and the skipped row's reason. The one skipped row is real: OCR ran "Atta 5 kg" together as `Atta5kg`, which the name filter rejects as a reference code. Say so if a judge counts 11 rows against 12 on the card — the price ₹295 was read correctly, the *name* was refused.
 - Try an amount with no exact basket → the attribution card says so and asks the merchant to pick. It does not guess.
 - Try ₹45 on the **printed rate card** catalog → 8 baskets, 28% confidence, alternates listed. Useful as a deliberate demonstration of ambiguity.
 - Handwriting: do **not** use as the judged path.

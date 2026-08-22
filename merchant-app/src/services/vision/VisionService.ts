@@ -143,6 +143,64 @@ export const SAMPLE_SHOPS: SampleShop[] = [
   },
 ]
 
+export type SamplePhotoId = 'meena-kirana-rate-card-photo' | 'meena-kirana-shelf-photo'
+
+export interface SamplePhoto {
+  id: SamplePhotoId
+  label: string
+  caption: string
+  imagePath: string
+  fileName: string
+  /**
+   * What a real read of this photo is expected to produce.
+   *
+   * This is documentation and a test assertion, never an input to the pipeline:
+   * nothing branches on it to shortcut OCR or to substitute rows. If a photo
+   * stops behaving the way this says, the label is wrong and gets corrected —
+   * `server/verifySamplePhotoOcr.mjs` is what catches that.
+   */
+  expectation: 'reads_prices' | 'no_prices'
+  /** Sets the expectation before the tap, so neither outcome looks like a bug. */
+  hint: string
+}
+
+/**
+ * Sample photographs that go through the real OCR pipeline.
+ *
+ * The distinction from SAMPLE_SHOPS above is the whole point of this list. Those
+ * are fixtures: rows we wrote, shown next to a drawing. These are photographs,
+ * and tapping one runs exactly what a camera capture runs — tesseract.js on the
+ * pixels, then parsing, then lexicon resolution. Whatever comes out is what the
+ * engine read, including nothing at all.
+ *
+ * Kept in a separate list rather than added to SAMPLE_SHOPS so the fixture demo
+ * path stays first in the UI and its two guard tests keep describing fixtures.
+ */
+export const SAMPLE_PHOTOS: SamplePhoto[] = [
+  {
+    id: 'meena-kirana-rate-card-photo',
+    label: 'Photo of a printed rate card',
+    caption: 'Read live by OCR',
+    imagePath: '/demo/meena-kirana-rate-card-photo.jpg',
+    fileName: 'meena-kirana-rate-card-photo.jpg',
+    expectation: 'reads_prices',
+    hint: 'A real photograph. The rows come out of the image, not out of the app.',
+  },
+  {
+    id: 'meena-kirana-shelf-photo',
+    label: 'Photo of a cluttered shelf',
+    caption: 'Read live — expect nothing',
+    imagePath: '/demo/meena-kirana-shelf-photo.jpg',
+    fileName: 'meena-kirana-shelf-photo.jpg',
+    expectation: 'no_prices',
+    hint: 'No price list is legible here, so the read should refuse rather than guess.',
+  },
+]
+
+export function findSamplePhoto(id: string): SamplePhoto | undefined {
+  return SAMPLE_PHOTOS.find((photo) => photo.id === id)
+}
+
 function copyItems(items: CatalogItem[]) {
   return items.map((value) => ({ ...value }))
 }

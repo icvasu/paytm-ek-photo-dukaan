@@ -22,7 +22,7 @@ One Vite process serves the React UI and the in-memory REST API.
 
 1. Profile → **Reset to sample data**.
 2. Home → **Ek Photo Dukaan**.
-3. Use a labelled **sample shop** (repeatable) or photograph a printed rate card (on-device OCR).
+3. Use a labelled **sample shop** (repeatable fixture — this is the judged tap), or run real on-device OCR by photographing a printed rate card or tapping a **sample photo**.
 4. Review / edit prices and availability.
 5. Preview `/#/dukaan/meena-kirana`. Show QR, copy link, WhatsApp draft.
 6. Add the matching **sample supplier bill**. Collect ₹45 and confirm the Thums Up basket.
@@ -67,7 +67,7 @@ Local Vite middleware and the Vercel `api/index.ts` function share `server/demoA
 
 - Payment **authorisation**, settlement, refund and supplier payout are **simulated**.
 - UPI QR construction is **real**; money moves only if `VITE_MERCHANT_VPA` is a real handle.
-- Sample shops are **fixtures**. A user-supplied photo uses **real on-device OCR**.
+- Sample **shops** are **fixtures** (rows we wrote, shown next to a drawing). A user-supplied photo and the two sample **photos** all use **real on-device OCR**, with no fixture behind them — `node server/verifySamplePhotoOcr.mjs` prints what they actually read.
 - Stock is a **range / heuristic**, never a fake exact count.
 - WhatsApp is a `wa.me` draft, not Cloud API send.
 - Without Redis, Vercel state is per-instance. `/api/health` reports the mode.

@@ -23,10 +23,10 @@ import { formatDayLabel, formatTime } from './lib/dates'
 import type { PaymentMethod, Transaction } from './types/models'
 import { buildDemandReport, buildStockForecasts } from './intelligence/engine'
 import {
-  NoTextFoundError, OcrUnavailableError, analyzePhoto, analyzeSample,
+  NoTextFoundError, OcrUnavailableError, analyzePhoto, analyzeSample, analyzeSamplePhoto,
   loadSampleInvoice, sampleShopForCatalog, type OcrPhase,
 } from './services/vision/catalogPipeline'
-import { DEFAULT_DUKAAN_SLUG, SAMPLE_SHOPS, buildSeededPublicCatalog } from './services/vision/VisionService'
+import { DEFAULT_DUKAAN_SLUG, SAMPLE_PHOTOS, SAMPLE_SHOPS, buildSeededPublicCatalog } from './services/vision/VisionService'
 import { NoInvoiceFoundError, analyzeInvoicePhoto } from './services/vision/invoicePipeline'
 import { solveBasket, unitsSoldBySku } from './domain/basketSolver'
 import {
@@ -815,12 +815,32 @@ function DukaanScanPage() {
         </button>)}
       </div>
 
+      {/* Photographs, not fixtures: these run the same OCR the camera does, so
+          whatever appears next was read off the image. Placed after the sample
+          shops on purpose — those are the quick, repeatable start. */}
+      <div className="scan-divider"><span>or read a sample photo for real</span></div>
+      <div className="sample-grid">
+        {SAMPLE_PHOTOS.map((photo) => <button className="sample-card" key={photo.id}
+          onClick={() => { setPhase({ progress: 0, label: 'Starting the reader' }); void build(() => analyzeSamplePhoto(photo.id, setPhase)) }}>
+          <img src={photo.imagePath} alt="" width={72} height={72} loading="lazy" />
+          <span>
+            <b>{photo.label}</b>
+            <small>{photo.caption}</small>
+            <small className="sample-hint">{photo.hint}</small>
+          </span>
+          <ChevronRight aria-hidden="true" />
+        </button>)}
+      </div>
+
       <div className="note">
         <Info aria-hidden="true" />
         <div>
           <b>Reading happens on your phone</b>
-          <p>Your photo is not uploaded anywhere. Sample shops are pre-written lists that
-            ship with the app — they are not read from the picture.</p>
+          <p>Your photo is not uploaded anywhere. The sample shops are pre-written lists
+            that ship with the app — they are not read from their picture. The sample
+            photos are the opposite: they go through the same reader your own photo does,
+            so their rows really are read from the image, and one of them has no readable
+            price list at all.</p>
         </div>
       </div>
     </Page>

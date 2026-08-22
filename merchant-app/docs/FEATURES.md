@@ -31,8 +31,11 @@ Seeded merchant: **Meena Reddy · Meena Kirana & General Store, Ameerpet**. Cloc
 | Home CTA into scan or manage | REAL | `/#/` |
 | Take / choose a photo of a shelf or printed rate card | REAL camera/file input | `/#/dukaan/scan` |
 | On-device OCR (tesseract.js) → line parse → fuzzy lexicon match | REAL, no upload | `analyzePhoto` |
-| Two labelled sample shops (kirana shelf, tea-counter rate card) | FIXTURE | Scan → sample cards |
-| Honest “reading on this phone” / sample-not-OCR disclosure | REAL | Scan + manage |
+| Two labelled sample shops (kirana shelf, tea-counter rate card) | FIXTURE — rows written by us, tied to a drawing | Scan → *start from a sample shop* |
+| Sample photo of a printed rate card | **REAL OCR** — no fixture behind it; 11 of 12 rows at 94% mean text confidence | Scan → *read a sample photo for real* |
+| Sample photo of a cluttered shelf | **REAL OCR** — reads zero lines and refuses, on purpose | Scan → *read a sample photo for real* |
+| Honest “reading on this phone” / fixture-vs-read disclosure | REAL | Scan + manage |
+| Reproducible OCR measurement over the shipped sample photos | REAL harness | `node server/verifySamplePhotoOcr.mjs` |
 | Editable catalog: name, price, availability, add, remove (undo) | REAL API | `/#/dukaan/manage` |
 | Stock shown as **range / flag**, never a fake exact count | REAL | Manage items |
 | Persist catalog through API (survives refresh while API is up) | REAL | `POST /api/catalog` |

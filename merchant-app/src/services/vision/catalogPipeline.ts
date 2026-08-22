@@ -2,7 +2,9 @@ import type { CatalogItem, VisionResult } from '../../types/models.js'
 import { runOcr, OcrUnavailableError, type OcrOutcome, type OcrPhase } from './ocr.js'
 import { parseCatalogLines, type ParseOutcome, type RejectedLine } from './parseCatalog.js'
 import { resolveItems, type ResolvedItem } from './resolveItems.js'
-import { findSampleShop, loadSampleCatalog, loadSampleInvoice, sampleShopForCatalog } from './VisionService.js'
+import {
+  findSamplePhoto, findSampleShop, loadSampleCatalog, loadSampleInvoice, sampleShopForCatalog,
+} from './VisionService.js'
 
 /**
  * Composes the catalog extraction pipeline:
@@ -67,9 +69,9 @@ function toCatalogItem(item: ResolvedItem): CatalogItem {
   }
 }
 
-function readingNote(outcome: OcrOutcome, parse: ParseOutcome, matched: number): string {
+function readingNote(outcome: OcrOutcome, parse: ParseOutcome, matched: number, sourceLabel: string): string {
   const parts = [
-    `Read ${parse.linesRead} line${parse.linesRead === 1 ? '' : 's'} off your photo with on-device OCR`,
+    `Read ${parse.linesRead} line${parse.linesRead === 1 ? '' : 's'} off ${sourceLabel} with on-device OCR`,
     `kept ${parse.items.length} as priced item${parse.items.length === 1 ? '' : 's'}`,
   ]
   if (parse.rejected.length) parts.push(`skipped ${parse.rejected.length}`)
@@ -87,6 +89,11 @@ export async function analyzePhoto(
   file: Blob,
   fileName: string,
   onPhase?: (phase: OcrPhase) => void,
+  /**
+   * How to refer to the image in the note the merchant reads. Only the wording
+   * changes; a sample photo is put through the identical pipeline.
+   */
+  sourceLabel = 'your photo',
 ): Promise<VisionResult & { sourceImageName: string }> {
   const outcome = await runOcr(file, onPhase)
   const parse = parseCatalogLines(outcome.lines)
@@ -126,7 +133,7 @@ export async function analyzePhoto(
     items: resolved.map(toCatalogItem),
     // Confidence describes the read, so it must come from the read.
     confidence: meanConfidence >= 70 ? 'high' : meanConfidence >= 50 ? 'medium' : 'starter',
-    readingNote: readingNote(outcome, parse, matchedCount),
+    readingNote: readingNote(outcome, parse, matchedCount, sourceLabel),
     sourceKind: 'upload',
     sourceImageName: fileName,
     provenance: {
@@ -149,5 +156,30 @@ export function analyzeSample(shopId: string): VisionResult & { sourceImageName:
   return loadSampleCatalog(shop)
 }
 
-export { OcrUnavailableError, loadSampleInvoice, sampleShopForCatalog, findSampleShop }
+/**
+ * Reads a sample photograph that ships with the app, for real.
+ *
+ * This exists so the demo can prove OCR works without depending on the venue's
+ * lighting or a judge's willingness to hand over their phone. It fetches the
+ * image and hands it to `analyzePhoto` — the same function the file picker
+ * calls, with no flag threaded through it. There is deliberately no fixture to
+ * fall back on: if the read finds nothing, this throws NoTextFoundError exactly
+ * as a user's own unreadable photo would, because a sample that quietly
+ * substitutes pre-written rows would make the honesty claim worthless.
+ */
+export async function analyzeSamplePhoto(
+  photoId: string,
+  onPhase?: (phase: OcrPhase) => void,
+): Promise<VisionResult & { sourceImageName: string }> {
+  const photo = findSamplePhoto(photoId)
+  if (!photo) throw new Error('That sample photo is not available.')
+
+  const response = await fetch(photo.imagePath)
+  if (!response.ok) throw new Error(`The sample photo could not be loaded (HTTP ${response.status}).`)
+  const blob = await response.blob()
+
+  return analyzePhoto(blob, photo.fileName, onPhase, 'this sample photo')
+}
+
+export { OcrUnavailableError, loadSampleInvoice, sampleShopForCatalog, findSampleShop, findSamplePhoto }
 export type { OcrPhase, ResolvedItem, RejectedLine }
