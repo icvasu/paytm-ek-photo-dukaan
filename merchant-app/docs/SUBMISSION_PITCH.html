@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ek Photo Dukaan · Submission Pitch</title>
+<style>
+  :root{--navy:#012b72;--deep:#001943;--cyan:#00baf2;--ink:#10233f;--paper:#f4f8fc;--muted:#607087;--amber:#ffb547;--white:#fff}
+  *{box-sizing:border-box} html,body{margin:0;background:#07101f;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#fff}
+  body{overflow-x:hidden}.deck{width:1600px;margin:auto}.slide{width:1600px;height:900px;padding:68px 84px;position:relative;overflow:hidden;display:flex;flex-direction:column;background:linear-gradient(145deg,var(--navy),var(--deep) 72%,#000d25)}
+  .slide:after{content:"";position:absolute;width:780px;height:780px;border-radius:50%;right:-260px;top:-300px;background:radial-gradient(circle,rgba(0,186,242,.22),transparent 68%)}
+  .slide>*{position:relative;z-index:1}.light{background:linear-gradient(150deg,#fff,var(--paper));color:var(--ink)}.light:after{background:radial-gradient(circle,rgba(0,186,242,.12),transparent 68%)}
+  .eyebrow{color:var(--cyan);font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:.16em;margin-bottom:20px}.light .eyebrow{color:#0078ad}
+  h1,h2,h3,p{margin:0} h1{font-size:100px;line-height:.92;letter-spacing:-.05em} h2{font-size:60px;line-height:1.02;letter-spacing:-.035em} h3{font-size:25px;line-height:1.15}
+  .lede{font-size:31px;line-height:1.34;color:rgba(255,255,255,.72);margin-top:25px;max-width:35ch}.light .lede{color:#52627a}.cyan{color:var(--cyan)}.amber{color:var(--amber)}
+  .brand{font-size:28px;font-weight:850;margin-bottom:50px}.brand span{color:var(--cyan)}.brand small{font-size:16px;font-weight:550;color:rgba(255,255,255,.55);margin-left:14px}
+  .chips{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}.chip{font-size:18px;font-weight:700;border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:10px 19px}.chip.hot{background:var(--cyan);border-color:var(--cyan);color:#002544}.light .chip{border-color:#bed1e2;color:#29415e}
+  .fill{flex:1}.foot{font-size:18px;line-height:1.45;color:rgba(255,255,255,.5);margin-top:20px}.light .foot{color:#69798e}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:30px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:30px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:28px}
+  .card{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.055);border-radius:20px;padding:25px}.card.hot{background:rgba(0,186,242,.14);border-color:rgba(0,186,242,.5)}.card.warn{background:rgba(255,181,71,.11);border-color:rgba(255,181,71,.42)}
+  .card .tag{display:block;color:var(--cyan);font-size:14px;font-weight:850;text-transform:uppercase;letter-spacing:.13em;margin-bottom:12px}.card p{font-size:18px;line-height:1.44;color:rgba(255,255,255,.66);margin-top:10px}
+  .light .card{border-color:#d6e1eb;background:#fff;box-shadow:0 12px 32px rgba(1,43,114,.08)}.light .card p{color:#5d6c80}.light .card h3{color:var(--ink)}
+  .problem{display:grid;grid-template-columns:1.05fr .95fr;gap:58px;align-items:center;flex:1}.quote{font-size:50px;line-height:1.15;font-weight:760;letter-spacing:-.03em}.pain{display:grid;gap:18px}.pain .card{padding:26px 28px}.pain strong{display:block;color:var(--cyan);font-size:21px;margin-bottom:7px}
+  .loop{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:28px}.node{min-height:132px;border:1px solid rgba(255,255,255,.17);border-radius:17px;padding:20px;background:rgba(255,255,255,.05);position:relative}.node.pay{background:rgba(0,186,242,.16);border-color:rgba(0,186,242,.55)}
+  .node b{font:800 14px ui-monospace,Menlo,monospace;color:var(--cyan);letter-spacing:.08em}.node h3{margin-top:9px}.node p{font-size:16px;line-height:1.35;color:rgba(255,255,255,.62);margin-top:8px}.arrow{position:absolute;right:-15px;top:48px;color:var(--cyan);font-size:27px;z-index:3}
+  .loopnote{margin-top:18px;border-top:2px dashed rgba(0,186,242,.5);padding-top:14px;font-size:20px;color:rgba(255,255,255,.65)}
+  .withshot{display:grid;grid-template-columns:1fr auto;gap:50px;align-items:start}.shots{display:flex;gap:22px}.shot{height:470px;width:auto;border-radius:16px;border:1px solid rgba(255,255,255,.2);box-shadow:0 20px 46px rgba(0,0,0,.38);background:#fff}.shot.small{height:410px}.caption{font-size:15px;color:rgba(255,255,255,.5);margin-top:9px;max-width:28ch;line-height:1.35}
+  .metrics{display:flex;gap:46px;margin-top:32px}.metric .big{font-size:68px;line-height:.95;font-weight:850;letter-spacing:-.05em;color:var(--cyan)}.metric .cap{font-size:17px;line-height:1.35;color:rgba(255,255,255,.58);max-width:18ch;margin-top:9px}
+  .answer{font-size:38px;line-height:1.2;margin-top:28px;font-weight:750}.formula{margin-top:25px;padding:24px 28px;border-radius:18px;background:rgba(0,186,242,.14);border:1px solid rgba(0,186,242,.5);font:700 28px ui-monospace,Menlo,monospace}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:28px}.list{list-style:none;padding:0;margin:0}.list li{font-size:20px;line-height:1.35;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.1)}.light .list li{border-color:#dce5ee}.list li:last-child{border:0}
+  .real-title,.sim-title{font-size:20px;font-weight:850;text-transform:uppercase;letter-spacing:.1em;padding-bottom:12px;border-bottom:2px solid}.real-title{color:#0079b8;border-color:#88d9f3}.sim-title{color:#ae6d11;border-color:#e8ba75}
+  .links{font:700 20px ui-monospace,Menlo,monospace;margin-top:20px;color:#135f97}.disclaimer{font-size:17px;line-height:1.45;color:#68798e;margin-top:20px}
+  .page{position:absolute;right:40px;bottom:28px;font:700 14px ui-monospace,Menlo,monospace;color:rgba(255,255,255,.32)}.light .page{color:#91a0b2}
+  @page{size:16in 9in;margin:0}@media print{html,body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}.deck{width:auto;margin:0}.slide{page-break-after:always;break-after:page}.slide:last-child{page-break-after:auto;break-after:auto}}
+</style>
+</head>
+<body><main class="deck">
+
+<section class="slide">
+  <div class="brand"><span>pay</span>tm <small>AI Hackathon · independent prototype</small></div>
+  <div class="eyebrow">Ek Photo Dukaan</div>
+  <h1>Photograph the shelf.<br><span class="cyan">Payments keep the register.</span></h1>
+  <p class="lede">A Paytm-for-Business add-on that turns one photo into a catalog, then turns every payment amount into a proposed basket and a smarter restock.</p>
+  <div class="chips"><span class="chip hot">No typing</span><span class="chip">No new hardware</span><span class="chip">Merchant confirms every guess</span></div>
+  <div class="fill"></div>
+  <p class="foot">Built for small merchants · Live: merchant-app-black.vercel.app</p><span class="page">01 / 09</span>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">The problem · data entry breaks inventory</div>
+  <div class="problem">
+    <div><h2>No one will type<br><span class="cyan">200 SKUs</span> into an app.</h2><p class="lede">At 20 seconds per item, setup alone takes more than an hour. Prices change. The register goes stale before it becomes useful.</p></div>
+    <div class="pain">
+      <div class="card"><strong>She guesses what is left</strong><p>Stock is a range in her head, not a database.</p></div>
+      <div class="card"><strong>She discovers stockouts from customers</strong><p>The fast mover is gone on Saturday evening.</p></div>
+      <div class="card hot"><strong>Money arrives, but “what sold?” does not</strong><p>A ₹45 payment carries an amount, not a barcode.</p></div>
+    </div>
+  </div>
+  <p class="foot">The cold-start problem is not intelligence. It is unpaid typing.</p><span class="page">02 / 09</span>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">The product loop · Paytm is the sensor and the action</div>
+  <h2 style="font-size:51px">One photo starts it. The payments she already takes keep it running.</h2>
+  <div class="loop">
+    <div class="node"><b>01</b><h3>Photo</h3><p>Shelf or printed rate card, read on-device.</p><span class="arrow">→</span></div>
+    <div class="node"><b>02</b><h3>Catalog</h3><p>Named, priced, editable. Stock stays a range.</p><span class="arrow">→</span></div>
+    <div class="node pay"><b>03 · PAYTM</b><h3>UPI QR</h3><p>Real NPCI-style <code>upi://pay</code> intent.</p><span class="arrow">→</span></div>
+    <div class="node pay"><b>04 · SENSOR</b><h3>Payment</h3><p>₹45 arrives. Nobody rang up an item.</p></div>
+    <div class="node"><b>08 · ACTION</b><h3>Pay supplier</h3><p>Merchant approves; payout is simulated and labelled.</p><span class="arrow">←</span></div>
+    <div class="node"><b>07</b><h3>Restock</h3><p>Confirmed demand becomes days of cover.</p><span class="arrow">←</span></div>
+    <div class="node"><b>06</b><h3>Stock range</h3><p>Moves only after merchant confirmation.</p><span class="arrow">←</span></div>
+    <div class="node pay"><b>05 · INFERENCE</b><h3>Basket</h3><p>Which prices sum exactly to ₹45?</p></div>
+  </div>
+  <div class="loopnote"><b class="cyan">↻ Closed loop:</b> money in observes demand; money out acts on it.</div>
+  <p class="foot">Remove Paytm and there is no transaction stream to observe and no supplier payment to complete the loop.</p><span class="page">03 / 09</span>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Live OCR proof · measured on the shipped rate-card photo</div>
+  <div class="withshot">
+    <div>
+      <h2>Real text in.<br><span class="cyan">No invented rows out.</span></h2>
+      <div class="metrics">
+        <div class="metric"><div class="big">13</div><div class="cap">text lines read</div></div>
+        <div class="metric"><div class="big">94%</div><div class="cap">mean OCR confidence</div></div>
+        <div class="metric"><div class="big">12/12</div><div class="cap">priced rows kept</div></div>
+      </div>
+      <p class="answer">The 13th line was the heading. It had no price, so the parser dropped it and showed why.</p>
+      <div class="chips"><span class="chip hot">On-device OCR</span><span class="chip">Per-row confidence</span><span class="chip">Merchant edits</span></div>
+    </div>
+    <div><img class="shot" src="screens/journey-03-manage-populated.png" alt="Real app catalog screen"><p class="caption">Real app screen · every item remains editable</p></div>
+  </div>
+  <p class="foot">A cluttered shelf photo returns zero readable lines and the app refuses. No silent fallback catalog.</p><span class="page">04 / 09</span>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">The ₹45 moment · inference in plain words</div>
+  <div class="withshot">
+    <div>
+      <h2>The amount becomes<br><span class="cyan">a proposed basket.</span></h2>
+      <div class="formula">12 items → search 14 combinations → 1 exact basket</div>
+      <div class="metrics">
+        <div class="metric"><div class="big">₹45</div><div class="cap">payment amount</div></div>
+        <div class="metric"><div class="big">1×</div><div class="cap">Thums Up 750 ml</div></div>
+        <div class="metric"><div class="big">92%</div><div class="cap">heuristic cap, not accuracy</div></div>
+      </div>
+      <p class="answer">The model proposes. Meena confirms. Only then does the stock range move.</p>
+    </div>
+    <div><img class="shot" src="screens/journey-10-payment-detail-basket.png" alt="Payment basket inference screen"><p class="caption">Real app screen · 14 searched, one exact basket</p></div>
+  </div>
+  <p class="foot">If several baskets fit, alternates are shown and confidence drops. If none fit, the app asks for manual input.</p><span class="page">05 / 09</span>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">AI innovation · four explainable components</div>
+  <h2 style="font-size:54px">Intelligence that <span class="cyan">refuses instead of guessing.</span></h2>
+  <div class="grid4">
+    <div class="card"><span class="tag">01 · Perception</span><h3>On-device OCR</h3><p>Tesseract.js reads printed text in the browser. No upload, API key, or per-call fee.</p></div>
+    <div class="card"><span class="tag">02 · Resolution</span><h3>Fuzzy name match</h3><p>Repairs likely spelling errors against a product lexicon without adding unseen products.</p></div>
+    <div class="card hot"><span class="tag">03 · Inference</span><h3>Bounded subset-sum</h3><p>Searches exact-price baskets within strict item, quantity, and compute limits.</p></div>
+    <div class="card"><span class="tag">04 · Prediction</span><h3>Weighted demand</h3><p>Confirmed baskets become velocity, days of cover, and reorder suggestions.</p></div>
+  </div>
+  <div class="grid3" style="margin-top:18px">
+    <div class="card warn"><h3>No text?</h3><p>No catalog.</p></div>
+    <div class="card warn"><h3>No exact sum?</h3><p>Ask the merchant.</p></div>
+    <div class="card warn"><h3>Several sums?</h3><p>Show choices; never decrement silently.</p></div>
+  </div>
+  <div class="fill"></div><p class="foot">Rule-based, bounded, and auditable. Every displayed confidence has a stated ceiling.</p><span class="page">06 / 09</span>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Why Paytm · structural integration, honest boundary</div>
+  <h2 style="font-size:55px">Money in is the sensor.<br>Money out is the action.</h2>
+  <div class="grid3">
+    <div class="card hot"><span class="tag">Real · customer side</span><h3>UPI QR + intent</h3><p>A standards-style <code>upi://pay</code> URI opens a real UPI app with validated fields.</p></div>
+    <div class="card hot"><span class="tag">Real · merchant side</span><h3>WhatsApp draft</h3><p>A real <code>wa.me</code> deep link opens a pre-filled message. The merchant presses send.</p></div>
+    <div class="card"><span class="tag">Feasible · adapter seam</span><h3>Live rails can replace one layer</h3><p>Payment I/O sits behind a documented service seam and webhook design.</p></div>
+  </div>
+  <div class="split">
+    <div><div class="real-title">Real and running</div><ul class="list"><li>OCR, solver, forecast, catalog persistence</li><li>UPI intent construction and scannable QR</li><li>Merchant-approved basket and order workflow</li></ul></div>
+    <div><div class="sim-title">Simulated and labelled</div><ul class="list"><li>Payment authorisation and settlement</li><li>Paytm webhook receipt</li><li>Supplier payout; no bank is contacted</li></ul></div>
+  </div>
+  <p class="foot">Independent hackathon prototype. Not affiliated with or endorsed by Paytm. No live settlement is claimed.</p><span class="page">07 / 09</span>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Impact + feasibility · designed to ship as an add-on</div>
+  <div class="withshot">
+    <div>
+      <h2>Camera onboarding.<br><span class="cyan">Zero marginal AI cost.</span></h2>
+      <div class="grid2" style="grid-template-columns:1fr;gap:14px;margin-top:24px">
+        <div class="card"><h3>No second app</h3><p>Lives under “More for your business” in a Paytm-for-Business merchant shell.</p></div>
+        <div class="card"><h3>No new hardware</h3><p>Phone camera, existing QR, existing merchant workflow.</p></div>
+        <div class="card hot"><h3>Runs on the merchant’s device</h3><p>OCR and inference need no GPU and add no per-merchant model bill.</p></div>
+        <div class="card"><h3>Verified path</h3><p>Over 150 tests plus a 40/40 judge harness.</p></div>
+      </div>
+    </div>
+    <div class="shots">
+      <div><img class="shot small" src="screens/home.png" alt="Paytm merchant shell home"><p class="caption">Add-on inside the merchant shell</p></div>
+      <div><img class="shot small" src="screens/journey-13-insights.png" alt="Stock and business insights"><p class="caption">Ranges and days of cover, not fake counts</p></div>
+    </div>
+  </div>
+  <div class="fill"></div><p class="foot">Pilot metric: stockout days per fast-moving SKU. No pilot result is claimed today.</p><span class="page">08 / 09</span>
+</section>
+
+<section class="slide light">
+  <div class="eyebrow">Honest limits · live proof</div>
+  <h2>Built for the small catalog<br>Meena can review herself.</h2>
+  <div class="grid3">
+    <div class="card"><span class="tag">Scope</span><h3>10–15 items today</h3><p>Not a 2,000-SKU supermarket. Distinct prices make amount inference useful.</p></div>
+    <div class="card"><span class="tag">Input</span><h3>Printed type today</h3><p>Handwriting is not the judged path. Weak reads show confidence and stay editable.</p></div>
+    <div class="card"><span class="tag">Blind spot</span><h3>Cash is invisible</h3><p>Paytm sales are observed. Cash cannot be claimed as known.</p></div>
+  </div>
+  <div class="grid2" style="margin-top:22px">
+    <div><div class="real-title">Try it</div><p class="links">merchant-app-black.vercel.app</p></div>
+    <div><div class="real-title">Inspect it</div><p class="links">github.com/icvasu/paytm-ek-photo-dukaan</p></div>
+  </div>
+  <div class="fill"></div>
+  <p style="font-size:35px;font-weight:780;letter-spacing:-.02em">One photo to start. After that, her own payments keep her books.</p>
+  <p class="disclaimer">Ek Photo Dukaan is an independent hackathon prototype. Payment authorisation, settlement, webhooks, and supplier payout are simulated and labelled. No real money moves.</p><span class="page">09 / 09</span>
+</section>
+
+</main></body></html>
