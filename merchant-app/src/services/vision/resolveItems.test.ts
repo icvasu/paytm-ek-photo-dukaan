@@ -59,19 +59,34 @@ describe('the printed pack size survives the lexicon', () => {
     }
   })
 
-  it('adopts the lexicon name when it states the same pack size', () => {
-    const item = readLine('Fortune Oil 1L 140')
-    expect(item.name).toBe('Fortune Sunflower Oil 1 L')
-    expect(item.evidence.printedPackSize).toBe('1 L')
+  it('lets the lexicon re-spell the words the card printed', () => {
+    const item = readLine('Aashinvaad Atta5kg 295', 82)
+    expect(item.name).toBe('Aashirvaad Atta 5 kg')
     expect(item.evidence.nameKeptAsPrinted).toBe(false)
+    // The pack size survived the rename because both sides state the same one.
+    expect(item.evidence.printedPackSize).toBe('5 kg')
   })
 
-  it('treats “1 kg” and “1000 g” as the same printed fact', () => {
-    // The lexicon entry is "Tata Salt 1 kg"; 1000 g is the same pack, so the
-    // canonical spelling is not a contradiction.
-    expect(readLine('Tata Salt 1000 g 28').name).toBe('Tata Salt 1 kg')
-    // 500 g is a different pack, so the card wins.
-    expect(readLine('Tata Salt 500 g 18').name).toBe('Tata Salt 500 g')
+  it('does not let the lexicon add a word the card never printed', () => {
+    // "Fortune Sunflower Oil 1 L" is the lexicon entry; the card said "Fortune
+    // Oil 1L". The pack size agrees, but "Sunflower" is our word, not the card's.
+    const item = readLine('Fortune Oil 1L 140')
+    expect(item.name).toBe('Fortune Oil 1 L')
+    expect(item.matched).toBe(true)
+    expect(item.suggestedId).toBe('fortune-oil')
+    expect(item.evidence.nameKeptAsPrinted).toBe(true)
+  })
+
+  it('does not call “1000 g” a contradiction of the lexicon’s 1 kg', () => {
+    const sameSize = readLine('Tata Salt 1000 g 28')
+    expect(sameSize.name).toBe('Tata Salt 1000 g')
+    // The same pack written differently is not reported as a disagreement.
+    expect(sameSize.evidence.nameNote).not.toContain('kept the printed')
+    // A genuinely different pack is.
+    const smaller = readLine('Tata Salt 500 g 18')
+    expect(smaller.name).toBe('Tata Salt 500 g')
+    expect(smaller.evidence.nameNote).toContain('kept the printed “500 g”')
+    expect(smaller.evidence.nameNote).toContain('1 kg')
   })
 
   it('keeps a printed brand the lexicon entry does not carry', () => {

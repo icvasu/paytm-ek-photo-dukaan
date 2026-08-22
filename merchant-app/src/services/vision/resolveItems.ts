@@ -58,10 +58,10 @@ const MATCH_THRESHOLD = 0.62
 /** Above this the top match is treated as decided even if a runner-up is close. */
 const DECISIVE_MARGIN = 0.08
 /**
- * How close the lexicon name has to be to the printed text, once both have had
- * their pack size removed, before its spelling is used instead. High on purpose:
- * this is only meant to fix "Colgato" into "Colgate", never to turn
- * "Britannia Bread" into a different product's name.
+ * How close the lexicon name has to be to the printed text before its spelling
+ * is shown instead. High on purpose: at this threshold the lexicon can only
+ * re-spell the words the photo already printed ("Aashinvaad" → "Aashirvaad"),
+ * never add one of its own ("Fortune Oil" → "Fortune Sunflower Oil").
  */
 const SPELLING_THRESHOLD = 0.88
 
@@ -69,10 +69,11 @@ const SPELLING_THRESHOLD = 0.88
  * Chooses the name shown on screen.
  *
  * The rule is that the photo owns every fact it states. The lexicon still
- * decides what the row *is* — its category, its id, its price band — but it
- * never gets to restate a printed pack size as a different one, and it never
- * gets to add a pack size the card did not print. Those two moves are what make
- * an otherwise correct read look invented.
+ * decides what the row *is* — its category, its id, its price band — but it only
+ * gets to re-spell the words that were printed. It never restates a printed pack
+ * size as a different one, never adds a pack size the card did not print, and
+ * never adds a word of its own. Those are the moves that make an otherwise
+ * correct read look invented.
  */
 function chooseName(printed: string, canonical: string): { name: string; note: string; keptAsPrinted: boolean } {
   const printedPack = readPackSize(printed)
@@ -88,33 +89,27 @@ function chooseName(printed: string, canonical: string): { name: string; note: s
     }
   }
 
-  if (!printedPack && lexiconPack) {
-    const withoutPack = stripPackSize(canonical)
-    if (withoutPack && editSimilarity(printed, withoutPack) >= SPELLING_THRESHOLD) {
-      return {
-        name: withoutPack,
-        keptAsPrinted: false,
-        note: `lexicon spelling, without its “${lexiconPack.text}” — the photo printed no pack size`,
-      }
-    }
+  // When the photo printed no pack size, the lexicon's is dropped rather than
+  // shown, so silence on the card stays silence on the screen.
+  const droppedPack = Boolean(lexiconPack && !printedPack)
+  const offered = droppedPack ? stripPackSize(canonical) : canonical
+
+  if (offered && editSimilarity(printed, offered) >= SPELLING_THRESHOLD) {
     return {
-      name: printed,
-      keptAsPrinted: true,
-      note: `no pack size printed, so the lexicon’s “${lexiconPack.text}” was not added`,
+      name: offered,
+      keptAsPrinted: false,
+      note: droppedPack
+        ? `lexicon spelling of the same words, without its “${lexiconPack!.text}” — the photo printed no pack size`
+        : 'lexicon spelling of the same words the photo printed',
     }
   }
 
-  // Neither side states a pack size the other contradicts. A read name that is
-  // longer than our entry is carrying detail worth keeping (a brand the lexicon
-  // does not list); otherwise the canonical spelling is the better rendering of
-  // the same thing.
-  const printedIsMoreSpecific = printed.length > canonical.length + 4
   return {
-    name: printedIsMoreSpecific ? printed : canonical,
-    keptAsPrinted: printedIsMoreSpecific,
-    note: printedIsMoreSpecific
-      ? 'kept as printed — more specific than the lexicon name'
-      : 'lexicon name, which states the same pack size that was printed',
+    name: printed,
+    keptAsPrinted: true,
+    note: droppedPack
+      ? `no pack size printed, so the lexicon’s “${lexiconPack!.text}” was not added`
+      : `kept as printed — the lexicon name reads “${canonical}”`,
   }
 }
 
