@@ -1,7 +1,7 @@
-import type { CollectPaymentInput, PaymentMethod, Transaction } from '../../types/models.ts'
-import { createId, paytmStyleTxnId } from '../../lib/ids.ts'
-import { rupeesToPaise } from '../../lib/money.ts'
-import { apiJson } from '../../lib/net.ts'
+import type { CollectPaymentInput, PaymentMethod, Transaction } from '../../types/models.js'
+import { createId, paytmStyleTxnId } from '../../lib/ids.js'
+import { rupeesToPaise } from '../../lib/money.js'
+import { apiJson } from '../../lib/net.js'
 
 export interface ChargeRequest {
   merchantId: string

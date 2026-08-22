@@ -1,5 +1,5 @@
-import { DEMO_NOW_ISO, addDays, parseISO, startOfDay, toISO } from '../lib/dates.ts'
-import { rupeesToPaise } from '../lib/money.ts'
+import { DEMO_NOW_ISO, addDays, parseISO, startOfDay, toISO } from '../lib/dates.js'
+import { rupeesToPaise } from '../lib/money.js'
 import type {
   AppNotification,
   Customer,
@@ -9,7 +9,7 @@ import type {
   Settlement,
   Transaction,
   TransactionStatus,
-} from '../types/models.ts'
+} from '../types/models.js'
 
 function mulberry32(seed: number) {
   return function rand() {

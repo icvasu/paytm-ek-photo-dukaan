@@ -1,4 +1,4 @@
-import type { CatalogItem, SupplierInvoiceLine, SupplierProfile, VisionResult } from '../../types/models.ts'
+import type { CatalogItem, SupplierInvoiceLine, SupplierProfile, VisionResult } from '../../types/models.js'
 
 export const MEENA_SHELF_ITEMS: CatalogItem[] = [
   item('tata-salt', 'Tata Salt 1 kg', 2800, 'in_stock', '12–18 packs', 'Staples'),

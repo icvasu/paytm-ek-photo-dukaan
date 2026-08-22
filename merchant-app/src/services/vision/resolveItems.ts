@@ -1,9 +1,9 @@
-import { bestMatch, type SimilarityBreakdown } from '../../intelligence/fuzzy.ts'
+import { bestMatch, type SimilarityBreakdown } from '../../intelligence/fuzzy.js'
 import {
   CATEGORY_FALLBACK, describeBand, lexiconAliases, priceBandFit,
   PRODUCT_LEXICON, type LexiconEntry,
-} from '../../intelligence/lexicon.ts'
-import type { ParsedItem } from './parseCatalog.ts'
+} from '../../intelligence/lexicon.js'
+import type { ParsedItem } from './parseCatalog.js'
 
 /** Why one catalog row looks the way it does. Rendered in the UI verbatim. */
 export interface ItemEvidence {

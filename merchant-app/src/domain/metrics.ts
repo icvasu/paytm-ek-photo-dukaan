@@ -1,5 +1,5 @@
-import { isSameDay, parseISO, startOfDay, weekdayName } from '../lib/dates.ts'
-import type { MerchantStoreData, Transaction } from '../types/models.ts'
+import { isSameDay, parseISO, startOfDay, weekdayName } from '../lib/dates.js'
+import type { MerchantStoreData, Transaction } from '../types/models.js'
 
 export function successfulSales(txns: Transaction[]): Transaction[] {
   return txns.filter((t) => t.status === 'success')

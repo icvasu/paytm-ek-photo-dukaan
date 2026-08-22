@@ -1,4 +1,4 @@
-import type { BasketLine, CatalogItem } from '../types/models.ts'
+import type { BasketLine, CatalogItem } from '../types/models.js'
 
 export interface BasketCandidate {
   lines: BasketLine[]

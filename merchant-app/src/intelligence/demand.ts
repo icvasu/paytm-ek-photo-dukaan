@@ -1,4 +1,4 @@
-import type { BasketAssignment, CatalogItem, SupplierProfile, Transaction } from '../types/models.ts'
+import type { BasketAssignment, CatalogItem, SupplierProfile, Transaction } from '../types/models.js'
 
 /**
  * Demand estimation and restock timing.
