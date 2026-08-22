@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { buildSeed, SEED_VERSION } from '../data/seed'
+import { apiJson } from '../lib/net'
 import { paytmService } from '../services/container'
 import type {
   AppNotification,
@@ -43,13 +44,6 @@ interface MerchantStore extends MerchantStoreData {
   attachBasket: (transactionId: string, lines: BasketLine[]) => Promise<void>
   raiseSupplierOrder: (skuIds: string[]) => Promise<void>
   confirmSupplierOrder: (id: string) => Promise<void>
-}
-
-async function apiJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, init)
-  const payload = await response.json() as T & { error?: string }
-  if (!response.ok) throw new Error(payload.error ?? 'Demo API request failed')
-  return payload
 }
 
 async function fetchApiState() {

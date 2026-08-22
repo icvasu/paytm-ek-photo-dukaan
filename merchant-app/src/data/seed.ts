@@ -208,7 +208,7 @@ export function buildSeed(): MerchantStoreData {
       settledAt: null,
       settlementId: null,
       referenceId: `${created.getFullYear()}${String(created.getMonth() + 1).padStart(2, '0')}${String(created.getDate()).padStart(2, '0')}${String(seq).padStart(6, '0')}`,
-      upiTxnId: args.method === 'upi' && !failed ? `UPI${seq}${created.getDate()}${created.getHours()}` : null,
+      upiTxnId: args.method === 'upi' && !failed ? `DEMO-UPI-${seq}${created.getDate()}${created.getHours()}` : null,
       note: args.note,
       failureReason: failed
         ? pick(rand, [

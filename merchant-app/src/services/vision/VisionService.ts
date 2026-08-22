@@ -1,16 +1,4 @@
-import type { CatalogItem, SupplierProfile, VisionResult } from '../../types/models.ts'
-
-export interface VisionInput {
-  fileName: string
-  fileSize: number
-  imageType: string
-  fileHash?: string
-}
-
-export interface VisionService {
-  analyze(input: VisionInput): Promise<VisionResult>
-  analyzeInvoice(input: VisionInput): Promise<Omit<SupplierProfile, 'id' | 'lastStockInAt'>>
-}
+import type { CatalogItem, SupplierInvoiceLine, SupplierProfile, VisionResult } from '../../types/models.ts'
 
 export const MEENA_SHELF_ITEMS: CatalogItem[] = [
   item('tata-salt', 'Tata Salt 1 kg', 2800, 'in_stock', '12–18 packs', 'Staples'),
@@ -27,7 +15,7 @@ export const MEENA_SHELF_ITEMS: CatalogItem[] = [
   item('lifebuoy', 'Lifebuoy Soap 125 g', 3800, 'in_stock', '10–12 bars', 'Personal care'),
 ]
 
-const counterList: CatalogItem[] = [
+const TEA_COUNTER_ITEMS: CatalogItem[] = [
   item('chai', 'Masala Chai', 1000, 'in_stock', 'Ready', 'Hot drinks'),
   item('samosa', 'Samosa', 1500, 'in_stock', '12–18 left', 'Snacks'),
   item('water', 'Water Bottle 1 L', 2000, 'in_stock', '10+ bottles', 'Drinks'),
@@ -50,95 +38,132 @@ function item(
   stockLabel: string,
   category: string,
 ): CatalogItem {
-  return { id, name, pricePaise, available: stockFlag !== 'out', stockFlag, stockLabel, category }
+  return {
+    id,
+    name,
+    pricePaise,
+    available: stockFlag !== 'out',
+    stockFlag,
+    stockLabel,
+    category,
+    source: 'sample',
+  }
 }
+
+export type SampleShopId = 'meena-kirana-shelf' | 'tea-counter-rate-card'
+
+export interface SampleShop {
+  id: SampleShopId
+  label: string
+  caption: string
+  imagePath: string
+  fileName: string
+  items: CatalogItem[]
+  supplier: SampleSupplier
+}
+
+interface SampleSupplier {
+  name: string
+  phone: string
+  lines: SupplierInvoiceLine[]
+}
+
+/**
+ * Pre-written sample shops for a fast, repeatable demo run.
+ *
+ * These are fixtures, not a vision result: the item list is written by us and
+ * tied to the sample image, and every screen that uses one says so. Photos the
+ * user supplies go through real on-device OCR instead.
+ */
+export const SAMPLE_SHOPS: SampleShop[] = [
+  {
+    id: 'meena-kirana-shelf',
+    label: 'Meena’s kirana shelf',
+    caption: '12 pre-written items',
+    imagePath: '/demo/meena-kirana-shelf.svg',
+    fileName: 'meena-kirana-shelf.svg',
+    items: MEENA_SHELF_ITEMS,
+    supplier: {
+      name: 'Sri Balaji Distributors',
+      phone: '+91 98765 44110',
+      lines: [
+        { skuId: 'aashirvaad', itemName: 'Aashirvaad Atta 5 kg', quantity: 10, unitCostPaise: 26000 },
+        { skuId: 'fortune-oil', itemName: 'Fortune Sunflower Oil 1 L', quantity: 24, unitCostPaise: 12400 },
+        { skuId: 'thums-up', itemName: 'Thums Up 750 ml', quantity: 24, unitCostPaise: 3600 },
+        { skuId: 'amul-milk', itemName: 'Amul Taaza Milk 500 ml', quantity: 30, unitCostPaise: 2450 },
+      ],
+    },
+  },
+  {
+    id: 'tea-counter-rate-card',
+    label: 'Printed rate card',
+    caption: '12 pre-written items',
+    imagePath: '/demo/tea-counter-rate-card.svg',
+    fileName: 'tea-counter-rate-card.svg',
+    items: TEA_COUNTER_ITEMS,
+    supplier: {
+      name: 'Sharma Traders',
+      phone: '+91 98765 44110',
+      lines: [
+        { skuId: 'thums-up', itemName: 'Thums Up 750 ml', quantity: 24, unitCostPaise: 3600 },
+        { skuId: 'limca', itemName: 'Limca 750 ml', quantity: 24, unitCostPaise: 3200 },
+        { skuId: 'juice', itemName: 'Mango Juice', quantity: 12, unitCostPaise: 3900 },
+        { skuId: 'biscuit', itemName: 'Parle-G Biscuit', quantity: 48, unitCostPaise: 750 },
+      ],
+    },
+  },
+]
 
 function copyItems(items: CatalogItem[]) {
   return items.map((value) => ({ ...value }))
 }
 
-function delay(ms: number) {
-  return new Promise((resolve) => globalThis.setTimeout(resolve, ms))
+export function findSampleShop(id: string): SampleShop | undefined {
+  return SAMPLE_SHOPS.find((shop) => shop.id === id)
 }
 
-export class DemoVisionService implements VisionService {
-  private readonly catalogCache = new Map<string, VisionResult>()
-  private readonly invoiceCache = new Map<string, Omit<SupplierProfile, 'id' | 'lastStockInAt'>>()
-
-  async analyze(input: VisionInput): Promise<VisionResult> {
-    const cacheKey = input.fileHash ? `${input.fileHash}:${input.fileName.toLowerCase()}` : ''
-    const cached = cacheKey ? this.catalogCache.get(cacheKey) : undefined
-    if (cached) return { ...cached, items: copyItems(cached.items) }
-
-    await delay(350)
-    const key = input.fileName.toLowerCase()
-    if (key.includes('counter') || key.includes('rate') || key.includes('tea')) {
-      const result: VisionResult = {
-        items: copyItems(counterList),
-        confidence: 'high',
-        readingNote: 'Demo mapping recognised a printed counter list. Cached by image hash; prices are seeded, not production OCR.',
-        sourceKind: 'demo',
-      }
-      if (cacheKey) this.catalogCache.set(cacheKey, result)
-      return { ...result, items: copyItems(result.items) }
-    }
-    if (key.includes('meena') || key.includes('shelf') || key.includes('kirana')) {
-      const result: VisionResult = {
-        items: copyItems(MEENA_SHELF_ITEMS),
-        confidence: 'high',
-        readingNote: 'Demo mapping recognised the Meena Kirana shelf. Cached by image hash; stock is a visual range, not an exact count.',
-        sourceKind: 'demo',
-      }
-      if (cacheKey) this.catalogCache.set(cacheKey, result)
-      return { ...result, items: copyItems(result.items) }
-    }
-    const looksLikeImage = input.imageType.startsWith('image/')
-    const result: VisionResult = {
-      items: copyItems(MEENA_SHELF_ITEMS.slice(0, input.fileSize > 1_000_000 ? 10 : 7)),
-      confidence: 'starter',
-      readingNote: looksLikeImage
-        ? 'Prices could not be reliably read in demo mode. We cached an editable starter list by image hash.'
-        : 'This file could not be read as an image. An editable starter list was created instead.',
-      sourceKind: 'upload',
-    }
-    if (cacheKey) this.catalogCache.set(cacheKey, result)
-    return { ...result, items: copyItems(result.items) }
-  }
-
-  async analyzeInvoice(input: VisionInput): Promise<Omit<SupplierProfile, 'id' | 'lastStockInAt'>> {
-    const cacheKey = input.fileHash ? `${input.fileHash}:${input.fileName.toLowerCase()}` : ''
-    const cached = cacheKey ? this.invoiceCache.get(cacheKey) : undefined
-    if (cached) return { ...cached, lines: cached.lines.map((line) => ({ ...line })) }
-
-    await delay(350)
-    const key = input.fileName.toLowerCase()
-    const teaInvoice = (key.includes('tea') || key.includes('counter')) && !key.includes('meena') && !key.includes('kirana') && !key.includes('shelf')
-    const lines = teaInvoice
-      ? [
-          { skuId: 'thums-up', itemName: 'Thums Up 750 ml', quantity: 24, unitCostPaise: 3600 },
-          { skuId: 'limca', itemName: 'Limca 750 ml', quantity: 24, unitCostPaise: 3200 },
-          { skuId: 'juice', itemName: 'Mango Juice', quantity: 12, unitCostPaise: 3900 },
-          { skuId: 'biscuit', itemName: 'Parle-G Biscuit', quantity: 48, unitCostPaise: 750 },
-        ]
-      : [
-          { skuId: 'aashirvaad', itemName: 'Aashirvaad Atta 5 kg', quantity: 10, unitCostPaise: 26000 },
-          { skuId: 'fortune-oil', itemName: 'Fortune Sunflower Oil 1 L', quantity: 24, unitCostPaise: 12400 },
-          { skuId: 'thums-up', itemName: 'Thums Up 750 ml', quantity: 24, unitCostPaise: 3600 },
-          { skuId: 'amul-milk', itemName: 'Amul Taaza Milk 500 ml', quantity: 30, unitCostPaise: 2450 },
-        ]
-    const invoiceTotalPaise = lines.reduce((sum, line) => sum + line.quantity * line.unitCostPaise, 0)
-    const result = {
-      name: teaInvoice ? 'Sharma Traders' : 'Sri Balaji Distributors',
-      phone: '+91 98765 44110',
-      sourceImageName: input.fileName,
-      lines,
-      invoiceTotalPaise,
-      normalOrderPaise: invoiceTotalPaise,
-      disclosure: 'DEMO invoice heuristic cached by image hash: filename mapping, not production OCR. Merchant approval is required.',
-    }
-    if (cacheKey) this.invoiceCache.set(cacheKey, result)
-    return { ...result, lines: result.lines.map((line) => ({ ...line })) }
+/**
+ * Loads a sample shop fixture. Labelled `sample_photo` so the manage screen can
+ * say the rows were pre-written rather than read from the picture.
+ */
+export function loadSampleCatalog(shop: SampleShop): VisionResult & { sourceImageName: string } {
+  return {
+    items: copyItems(shop.items),
+    confidence: 'high',
+    readingNote: `Sample shop: these ${shop.items.length} rows ship with the prototype and are tied to the sample picture. They were not read out of it. Edit anything before sharing.`,
+    sourceKind: 'demo',
+    sourceImageName: shop.fileName,
+    provenance: {
+      method: 'sample_photo',
+      engine: null,
+      linesRead: 0,
+      rowsAccepted: shop.items.length,
+      rowsRejected: 0,
+      meanOcrConfidencePct: null,
+      durationMs: null,
+    },
   }
 }
 
-export const demoVisionService: VisionService = new DemoVisionService()
+/** Sample supplier bill for the matching sample shop. */
+export function loadSampleInvoice(shop: SampleShop): Omit<SupplierProfile, 'id' | 'lastStockInAt'> {
+  const lines = shop.supplier.lines.map((line) => ({ ...line }))
+  const invoiceTotalPaise = lines.reduce((sum, line) => sum + line.quantity * line.unitCostPaise, 0)
+  return {
+    name: shop.supplier.name,
+    phone: shop.supplier.phone,
+    sourceImageName: `${shop.id}-sample-invoice`,
+    lines,
+    invoiceTotalPaise,
+    normalOrderPaise: invoiceTotalPaise,
+    disclosure: 'Sample supplier bill that ships with the prototype. Nothing was read from a picture and no payable exists.',
+  }
+}
+
+/** Picks the sample shop whose fixture matches the catalog currently loaded. */
+export function sampleShopForCatalog(items: { id: string }[] | undefined): SampleShop {
+  const ids = new Set((items ?? []).map((entry) => entry.id))
+  const teaMatches = TEA_COUNTER_ITEMS.filter((entry) => ids.has(entry.id)).length
+  const kiranaMatches = MEENA_SHELF_ITEMS.filter((entry) => ids.has(entry.id)).length
+  return teaMatches > kiranaMatches ? SAMPLE_SHOPS[1] : SAMPLE_SHOPS[0]
+}

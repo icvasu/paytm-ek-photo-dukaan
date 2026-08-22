@@ -1,2 +1,223 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-html{background:#e9eff6}body{margin:0;min-width:320px;min-height:100vh;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#101828;-webkit-font-smoothing:antialiased}button,input,select{font-family:inherit}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid rgba(0,186,242,.35);outline-offset:1px}#root{min-height:100vh}
+
+/* ==========================================================================
+   Design tokens
+   Style: Minimalism + Accessible & Ethical (ui-ux-pro-max: Banking/Traditional
+   Finance product row). Every colour pair below is checked to WCAG AA 4.5:1
+   for body text and 3:1 for large text and UI glyphs.
+   ========================================================================== */
+
+:root {
+  /* --- Brand constants (fixed by Paytm for Business) --- */
+  --brand-navy: #012b72;
+  --brand-navy-deep: #001c4d;
+  --brand-navy-lift: #00478f;
+  --brand-cyan: #00baf2;
+
+  /* --- Surfaces --- */
+  --color-canvas: #f2f5f9;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #eef2f7;
+  --color-surface-brand: var(--brand-navy);
+  --color-surface-accent: #e9f9ff;
+  --color-brand-soft: #e6edfa;    /* navy tint for icon plates */
+  --color-scrim: rgb(4 16 38 / 52%);
+
+  /* --- Borders --- */
+  --color-border: #dce3ec;
+  --color-border-strong: #b9c4d3;
+  --color-border-brand: #9fdff7;
+
+  /* --- Text (all AA on --color-surface and --color-canvas) --- */
+  --color-text: #101828;          /* 16.1:1 on white */
+  --color-text-muted: #54606f;    /* 6.4:1 on white, 5.9:1 on canvas */
+  --color-text-subtle: #6b7686;   /* 4.6:1 on white — labels only */
+  --color-text-inverse: #ffffff;
+  --color-text-brand: var(--brand-navy);  /* 13.2:1 on white */
+  --color-text-accent: #00688c;   /* 6.2:1 on white — cyan is NOT AA as text */
+
+  /* --- Intents --- */
+  --color-primary: var(--brand-cyan);
+  --color-on-primary: var(--brand-navy);  /* 5.8:1 on cyan */
+  /* Solid navy fill, used where a link must outrank a cyan button. */
+  --color-action: var(--brand-navy);
+  --color-on-action: #ffffff;             /* 13.2:1 on navy */
+  --color-success: #067647;
+  --color-success-surface: #ecfdf3;
+  --color-success-border: #a9e8c4;
+  --color-warning: #b54708;
+  --color-warning-surface: #fffaeb;
+  --color-warning-border: #fdd88a;
+  --color-danger: #b42318;
+  --color-danger-surface: #fef3f2;
+  --color-danger-border: #fca79b;
+  --color-info: #026aa2;
+  --color-info-surface: #f0f9ff;
+  --color-info-border: #b0e3fb;
+
+  /* --- Spacing: 4pt rhythm --- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* --- Radius --- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* --- Elevation: exactly four steps, nothing ad hoc --- */
+  --elev-0: none;
+  --elev-1: 0 1px 2px rgb(16 24 40 / 6%);
+  --elev-2: 0 4px 14px rgb(16 24 40 / 8%);
+  --elev-3: 0 14px 34px rgb(1 43 114 / 16%);
+
+  /* --- Type scale: 12 14 16 18 20 24 32 40 --- */
+  --fs-caption: 12px;
+  --fs-label: 14px;
+  --fs-body: 16px;
+  --fs-title: 18px;
+  --fs-h2: 20px;
+  --fs-h1: 24px;
+  --fs-display: 32px;
+  --fs-hero: 40px;
+
+  --lh-tight: 1.2;
+  --lh-snug: 1.35;
+  --lh-body: 1.5;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* --- Icons: one set (Lucide), one stroke, three sizes --- */
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+  --icon-stroke: 1.75;
+
+  /* --- Motion --- */
+  --dur-fast: 150ms;
+  --dur-base: 200ms;
+  --dur-slow: 280ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* --- Layering --- */
+  --z-header: 20;
+  --z-nav: 30;
+  --z-sheet: 100;
+  --z-toast: 200;
+
+  /* --- Touch --- */
+  --tap: 44px;
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-surface-sunken);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100dvh;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* Inputs stay at >=16px so iOS never auto-zooms the viewport. */
+input,
+select,
+textarea {
+  font-size: max(16px, 1em);
+}
+
+/* Navy carries the ring because cyan is only 2.3:1 on white; the cyan halo
+   outside it keeps the indicator visible on navy surfaces too. */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--brand-navy);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px rgb(0 186 242 / 45%);
+  border-radius: var(--radius-sm);
+}
+
+/* One icon language: Lucide outline, single stroke width everywhere.
+   CSS wins over the SVG presentation attribute, so this normalises the set. */
+svg {
+  stroke-width: var(--icon-stroke);
+  flex: none;
+}
+
+/* Money, counts and timers never jitter when digits change. */
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 1ms;
+    --dur-base: 1ms;
+    --dur-slow: 1ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

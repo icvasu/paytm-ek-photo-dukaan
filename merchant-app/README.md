@@ -2,7 +2,12 @@
 
 An unofficial hackathon prototype for **one photo → digital dukaan** inside a Paytm-for-Business-style shell. A printed rate-card photo becomes an editable catalog, shareable customer price list/QR and heuristic restock hint. Merchant payments are the base signal and host experience, not the pitch. This project is not affiliated with or endorsed by Paytm and uses no real Paytm APIs or credentials.
 
-**Teammate docs (Ek Photo Dukaan V0):** [docs/V0.md](docs/V0.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/DEMO.md](docs/DEMO.md) · [docs/TEAM.md](docs/TEAM.md). Repo clone and branches: root [CONTRIBUTING.md](../CONTRIBUTING.md).
+**Teammate docs (Ek Photo Dukaan V0):** [docs/V0.md](docs/V0.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/DEMO.md](docs/DEMO.md) · [docs/TEAM.md](docs/TEAM.md) · [docs/DEPLOY.md](docs/DEPLOY.md). Repo clone and branches: root [CONTRIBUTING.md](../CONTRIBUTING.md).
+
+**Deploying?** Read [docs/DEPLOY.md](docs/DEPLOY.md) first. Vercel's Root
+Directory must be `merchant-app`. Environment variables are all optional and
+documented in [`.env.example`](.env.example); the app boots correctly with none
+of them set.
 
 ## Run
 

@@ -1,0 +1,144 @@
+/* "How this was inferred" panels. Layered on the app's .quiet-details pattern,
+   so only the inner content needs styling here. */
+
+.why { width: 100%; }
+
+.why > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.why-label { flex: 1 1 auto; }
+
+.why-badge {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-sunken);
+  color: var(--color-text-brand);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.why-body {
+  display: grid;
+  gap: 2px;
+}
+
+.why-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgb(1 43 114 / 7%);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-snug);
+}
+
+.why-row:last-child { border-bottom: 0; }
+
+.why-row > span {
+  flex: 1 1 auto;
+  color: var(--color-text-muted);
+}
+
+.why-row > strong {
+  flex: 0 1 auto;
+  text-align: right;
+  color: var(--color-text);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.why code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.why-uri {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  user-select: all;
+}
+
+.why-uri code {
+  color: var(--color-text-brand);
+  line-height: 1.45;
+}
+
+.why-note {
+  margin: 8px 0 0;
+  font-size: var(--fs-caption);
+  line-height: var(--lh-body);
+  color: var(--color-text-muted);
+}
+
+.why-alts,
+.why-evidence {
+  margin-top: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.why-alts h4,
+.why-evidence h4 {
+  margin: 0;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.03em;
+  color: var(--color-text-subtle);
+}
+
+.why-alts button,
+.why-alts > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: var(--fs-caption);
+  color: var(--color-text);
+  text-align: left;
+}
+
+.why-alts button { cursor: pointer; }
+.why-alts button:hover { border-color: var(--color-border-strong); }
+
+.why-alts i {
+  flex: none;
+  font-style: normal;
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.why-evidence > div {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.why-evidence code { color: var(--color-text-muted); }
+
+.why-evidence span {
+  font-size: var(--fs-caption);
+  line-height: var(--lh-snug);
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}

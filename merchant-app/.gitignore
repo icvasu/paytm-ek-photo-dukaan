@@ -12,6 +12,27 @@ dist
 dist-ssr
 *.local
 
+# Local env. .env.example is the committed template and must stay tracked.
+.env
+.env.*
+!.env.example
+
+# Vercel CLI link + pulled env
+.vercel
+
+# Throwaway debugging entrypoints, never part of a deploy
+scratch-*.ts
+scratch-*.mjs
+
+# Uncompressed language model left behind when building public/tesseract/
+# eng.traineddata.gz. 3.9 MB, unreferenced, and not what the worker fetches.
+/eng.traineddata
+
+# tesseract.js runtime, copied from node_modules by server/ocrAssets.ts.
+# public/tesseract/eng.traineddata.gz is committed: it is not an npm artefact.
+public/tesseract/worker.min.js
+public/tesseract/tesseract-core-*.wasm.js
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

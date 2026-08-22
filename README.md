@@ -33,9 +33,25 @@ Open `http://localhost:5173` (Vite). Details: [`merchant-app/README.md`](merchan
 | `staging` | Shared integration — **branch features off this** |
 | `feature/...` | Individual work; PR into `staging` |
 
+## Deploy
+
+The deployable app is **`merchant-app/`**, not the repository root. On Vercel,
+set **Root Directory → `merchant-app`** (Settings → Build and Deployment); it is
+a dashboard setting and cannot come from code.
+
+If that is left at the repository root, the root [`vercel.json`](vercel.json)
+runs [`scripts/vercel-root-guard.mjs`](scripts/vercel-root-guard.mjs) and fails
+the build with instructions, rather than shipping an empty deployment that 404s.
+Vercel reads `vercel.json` from the Root Directory only, so this guard never
+runs on a correctly configured deploy.
+
+Full instructions, environment variables and persistence semantics:
+[`merchant-app/docs/DEPLOY.md`](merchant-app/docs/DEPLOY.md).
+
 ## Repo layout
 
 - `merchant-app/` — Vite + React merchant demo
-- `merchant-app/docs/` — teammate V0 / architecture / demo / team
+- `merchant-app/docs/` — teammate V0 / architecture / demo / team / deploy
+- `scripts/` — repo-root tooling (Vercel root-directory guard)
 - Briefs at repo root (Markdown + PDF)
 - `research/` — supporting research (if present)

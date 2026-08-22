@@ -22,6 +22,9 @@ export type InsightKind =
 export type CatalogStockFlag = 'in_stock' | 'low' | 'out'
 export type VisionConfidence = 'high' | 'medium' | 'starter'
 
+/** How a catalog row got here. Shown in the UI so nothing looks conjured. */
+export type CatalogItemSource = 'sample' | 'ocr' | 'manual'
+
 export interface CatalogItem {
   id: string
   name: string
@@ -30,6 +33,22 @@ export interface CatalogItem {
   stockFlag: CatalogStockFlag
   stockLabel: string
   category: string
+  source?: CatalogItemSource
+  /** Only set for OCR rows: the reader's own confidence for that line. */
+  confidencePct?: number
+}
+
+export type CatalogMethod = 'sample_photo' | 'device_ocr' | 'manual_entry'
+
+/** Auditable record of how a catalog was produced. Rendered verbatim in the UI. */
+export interface CatalogProvenance {
+  method: CatalogMethod
+  engine: string | null
+  linesRead: number
+  rowsAccepted: number
+  rowsRejected: number
+  meanOcrConfidencePct: number | null
+  durationMs: number | null
 }
 
 export interface SupplierInvoiceLine {
@@ -100,6 +119,7 @@ export interface DukaanCatalog {
   readingNote: string
   createdAt: string
   updatedAt: string
+  provenance?: CatalogProvenance
 }
 
 export interface VisionResult {
@@ -107,6 +127,7 @@ export interface VisionResult {
   confidence: VisionConfidence
   readingNote: string
   sourceKind: 'demo' | 'upload'
+  provenance?: CatalogProvenance
 }
 
 export interface Merchant {

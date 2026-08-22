@@ -1,6 +1,7 @@
 import type { CollectPaymentInput, PaymentMethod, Transaction } from '../../types/models.ts'
 import { createId, paytmStyleTxnId } from '../../lib/ids.ts'
 import { rupeesToPaise } from '../../lib/money.ts'
+import { apiJson } from '../../lib/net.ts'
 
 export interface ChargeRequest {
   merchantId: string
@@ -85,7 +86,9 @@ export class DemoPaytmService implements PaytmService {
     return {
       ok: true,
       status: 'success',
-      providerRef: `UPI${Date.now().toString().slice(-10)}`,
+      // Prefixed so the screen that labels this a "UPI transaction ID" cannot
+      // be mistaken for an NPCI reference. No UPI network is contacted.
+      providerRef: `DEMO-UPI-${Date.now().toString().slice(-10)}`,
       failureReason: null,
       processedAt,
     }
@@ -98,7 +101,9 @@ export class DemoPaytmService implements PaytmService {
     }
     return {
       ok: true,
-      bankRef: `HDFCN${Date.now().toString().slice(-8)}${request.accountLast4}`,
+      // Deliberately not shaped like a bank UTR. Nothing here talks to a bank,
+      // and a realistic looking reference would imply otherwise.
+      bankRef: `DEMO-STL-${Date.now().toString().slice(-8)}`,
       completedAt: new Date().toISOString(),
     }
   }
@@ -111,9 +116,12 @@ export class DemoPaytmService implements PaytmService {
 
 export class ApiPaytmService implements PaytmService {
   async charge(request: ChargeRequest): Promise<ChargeResult> {
-    const response = await fetch('/api/payments', {
+    // The server simulates a ~700ms processor delay, so allow more headroom
+    // than a plain read before calling it a timeout.
+    const payload = await apiJson<{ transaction?: Transaction }>('/api/payments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      timeoutMs: 20_000,
       body: JSON.stringify({
         amountRupees: request.amountRupees,
         paymentMethod: request.method,
@@ -123,11 +131,7 @@ export class ApiPaytmService implements PaytmService {
         customerPhone: request.customerPhone,
       }),
     })
-    const payload = await response.json() as {
-      error?: string
-      transaction?: Transaction
-    }
-    if (!response.ok || !payload.transaction) throw new Error(payload.error ?? 'Payment API unavailable')
+    if (!payload?.transaction) throw new Error('The payment server answered without a transaction. Nothing was collected.')
     return {
       ok: payload.transaction.status === 'success',
       status: payload.transaction.status === 'success' ? 'success' : 'failed',
@@ -139,16 +143,13 @@ export class ApiPaytmService implements PaytmService {
   }
 
   async settleNow(request: InstantSettleRequest): Promise<InstantSettleResult> {
-    const response = await fetch('/api/settlements/instant', {
+    const payload = await apiJson<{ settlement?: { bankRef: string; completedAt: string } }>('/api/settlements/instant', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      timeoutMs: 20_000,
       body: JSON.stringify(request),
     })
-    const payload = await response.json() as {
-      error?: string
-      settlement?: { bankRef: string; completedAt: string }
-    }
-    if (!response.ok || !payload.settlement) throw new Error(payload.error ?? 'Settlement API unavailable')
+    if (!payload?.settlement) throw new Error('The settlement server answered without a settlement. Nothing was moved.')
     return {
       ok: true,
       bankRef: payload.settlement.bankRef,

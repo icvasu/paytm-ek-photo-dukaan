@@ -23,6 +23,10 @@ pnpm-debug.log*
 credentials.json
 secrets.json
 
+# Vercel CLI local link and pulled environment (contains project + org ids)
+.vercel/
+.vercel
+
 # OS and editor
 .DS_Store
 Thumbs.db
