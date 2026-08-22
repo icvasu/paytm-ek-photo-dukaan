@@ -1,21 +1,17 @@
 # Contributing (two-person hackathon)
 
-**Unofficial Paytm AI hackathon prototype** (Ek Photo Dukaan). Not affiliated with or endorsed by Paytm. Do not commit `.env` files, API keys, or production credentials.
+**Unofficial Paytm AI hackathon prototype** (Ek Photo Dukaan). Not affiliated with or endorsed by Paytm.
 
-GitHub: [https://github.com/icvasu/paytm-ek-photo-dukaan](https://github.com/icvasu/paytm-ek-photo-dukaan) (private). Owner account: **icvasu**.
+GitHub: [https://github.com/icvasu/paytm-ek-photo-dukaan](https://github.com/icvasu/paytm-ek-photo-dukaan) (private).  
+Owner: **icvasu**. Teammate: **@Jaiaggarwaaaaal** (write).
 
-Product docs: `merchant-app/docs/` — start with [V0.md](merchant-app/docs/V0.md), [ARCHITECTURE.md](merchant-app/docs/ARCHITECTURE.md), [TEAM.md](merchant-app/docs/TEAM.md), [DEMO.md](merchant-app/docs/DEMO.md).
+Do not commit `.env` files, API keys, tokens, or production credentials.
 
 ---
 
-## Clone (person 2)
-
-Ask the owner to add you as a collaborator, then:
+## Clone
 
 ```bash
-gh auth status
-# Expect github.com user you were invited with — not a random extra account.
-
 git clone https://github.com/icvasu/paytm-ek-photo-dukaan.git
 cd paytm-ek-photo-dukaan
 git fetch origin
@@ -31,54 +27,59 @@ Work from **`staging`**, not a stale local `main`.
 
 | Branch | Role |
 | --- | --- |
-| `main` | **Stable demo.** Default branch. Only merge when the judged walkthrough works. |
-| `staging` | **Shared integration.** Both people merge here first. |
-| `feature/...` | Individual work. **Branch off `staging`.** Examples: `feature/dukaan-capture`, `feature/dukaan-share-qr`. |
+| `main` | **Stable judged demo.** Default branch. Merge here only when the walkthrough in `merchant-app/docs/DEMO.md` works. |
+| `staging` | **Shared integration.** Both people land work here first. |
+| `feature/…` | Individual work. **Always branch off `staging`.** |
 
 ```bash
 git checkout staging
 git pull origin staging
 git checkout -b feature/your-slice
-# ... commits ...
+# …commits…
 git push -u origin feature/your-slice
 ```
 
-Open a PR **into `staging`**. When staging is demo-ready:
+Open a PR **into `staging`**. When staging is demo-ready, promote **and push both**:
 
 ```bash
 git checkout main
 git pull origin main
-git merge staging   # or GitHub PR staging → main
+git merge staging
 git push origin main
+git checkout staging
+git merge main
+git push origin staging
 ```
 
-Do not force-push `main` or `staging`. Do not rewrite history on shared branches.
+Keep `main` and `staging` at the same SHA after a promote so the teammate who uses `staging` is not left behind.
+
+**Never force-push `main` or `staging`.** Never rewrite shared history. Never change global git config in this folder.
+
+If someone else has uncommitted files in a shared working tree, **do not discard them** (`git checkout --`, `git reset --hard`) without asking.
 
 ---
 
-## Run the app
+## Run
 
-Node 20+ recommended. From repo root:
+Node 20+ recommended.
 
 ```bash
 cd merchant-app
 npm install
-npm run dev
+npm run dev      # http://127.0.0.1:5173 — UI + demo API
+npm run build
+npm run lint
+npm test
 ```
 
-Open the Vite URL (typically `http://localhost:5173`). One process serves the React UI and the in-memory REST API.
-
-```bash
-npm run build   # typecheck + production frontend (API is dev-only)
-```
-
-Do not commit `node_modules/`, `dist/`, or secrets (see `.gitignore`).
+Do not commit `node_modules/`, `dist/`, `.vercel/`, `.gstack/`, or secrets (see `.gitignore`).
 
 ---
 
-## What to read vs what to ignore
+## What to build vs ignore
 
-- **Build this:** Ek Photo Dukaan (one-photo catalog V0) inside `merchant-app/`.
+- **Build this:** Ek Photo Dukaan inside `merchant-app/`.
+- **Brief:** `Paytm_Ek_Photo_Dukaan_Brief.md`.
 - **Ignore for the demo:** `Paytm_QR_Rakshak_Winning_Strategy.md` — different concept.
 
-If someone else has uncommitted files in your shared folder, **do not discard them** (`git checkout --`, `git reset --hard`) without asking.
+Talk before changing `merchant-app/src/types/models.ts` — that is the shared schema.

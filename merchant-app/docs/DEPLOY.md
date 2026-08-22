@@ -25,8 +25,8 @@ to `merchant-app`, the root file is never read.
 | Key | Why |
 | --- | --- |
 | `framework: vite`, `outputDirectory: dist` | Standard Vite build. |
-| `functions: api/**/*.ts` | Makes `api/[...path].ts` a serverless function, 10s cap. |
-| `rewrites` | SPA fallback: any non-`/api` path serves `index.html`. |
+| `functions: api/**/*.ts` | Makes `api/index.ts` a serverless function, 10s cap. |
+| `rewrites` | `/api/:path*` → `api/index.ts` (Vite/static-build does not honour Next-style catch-alls for `/api/a/b`). Then SPA fallback: any non-`/api` path serves `index.html`. |
 | `headers` | `no-store` on `/api/*`; long immutable cache on `/tesseract/*`. |
 
 ### The rewrite ordering trap
@@ -66,6 +66,12 @@ it documents only variables the code actually reads.
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | server | Same, alternate names. KV names win. |
 
 Both the URL and the token must be present for shared mode to switch on.
+
+The public project currently has **no server env vars**. `/api/health` is
+expected to report `persistence: "instance-memory"` until a KV/Upstash store is
+attached in the Vercel dashboard. That is enough for a judged demo: the public
+dukaan seeds the sample catalog on a cold instance, and the client also falls
+back to that same catalog if the API is unreachable.
 
 ## Persistence semantics
 
@@ -110,7 +116,7 @@ npx vite-node server/probeProdApi.mjs        # 11 malformed/unknown/wrong-verb r
 npx vite-node server/probeStoreFailover.mjs  # shared store configured but unreachable
 ```
 
-`probeProdApi.mjs` mounts `api/[...path].ts` on a bare `node:http` server. That
+`probeProdApi.mjs` mounts `api/index.ts` on a bare `node:http` server. That
 matters: the Vite dev server answers CORS preflights itself, which masks whether
 the function does.
 

@@ -42,3 +42,8 @@ Thumbs.db
 # Misc
 *.local
 .cache/
+
+# Throwaway screenshot probes (keep the named demo screens)
+**/_probe.png
+**/_probe.jpg
+merchant-app/docs/screens/_*.png

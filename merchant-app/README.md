@@ -1,82 +1,76 @@
 # Ek Photo Dukaan merchant demo
 
-An unofficial hackathon prototype for **one photo → digital dukaan** inside a Paytm-for-Business-style shell. A printed rate-card photo becomes an editable catalog, shareable customer price list/QR and heuristic restock hint. Merchant payments are the base signal and host experience, not the pitch. This project is not affiliated with or endorsed by Paytm and uses no real Paytm APIs or credentials.
+Unofficial hackathon prototype: **one photo → digital dukaan** inside a Paytm-for-Business-style shell. A printed rate-card photo (or a labelled sample shop) becomes an editable catalog, a shareable customer price list / QR, and heuristic restock. Payments are the host rail, not the pitch. Not affiliated with or endorsed by Paytm. No production credentials.
 
-**Teammate docs (Ek Photo Dukaan V0):** [docs/V0.md](docs/V0.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/DEMO.md](docs/DEMO.md) · [docs/TEAM.md](docs/TEAM.md) · [docs/DEPLOY.md](docs/DEPLOY.md). Repo clone and branches: root [CONTRIBUTING.md](../CONTRIBUTING.md).
+**For judges:** [docs/PITCH.html](docs/PITCH.html) · [docs/DEMO.md](docs/DEMO.md) · [docs/SPEAKER_SCRIPT.md](docs/SPEAKER_SCRIPT.md) · [docs/JUDGE_DEFENSE.md](docs/JUDGE_DEFENSE.md) · [docs/FEATURES.md](docs/FEATURES.md) · [docs/PAYTM_INTEGRATION.md](docs/PAYTM_INTEGRATION.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/DEPLOY.md](docs/DEPLOY.md). Repo clone / branches: [CONTRIBUTING.md](../CONTRIBUTING.md). Screenshots: [docs/screens/](docs/screens/).
 
-**Deploying?** Read [docs/DEPLOY.md](docs/DEPLOY.md) first. Vercel's Root
-Directory must be `merchant-app`. Environment variables are all optional and
-documented in [`.env.example`](.env.example); the app boots correctly with none
-of them set.
+**Deploying?** [docs/DEPLOY.md](docs/DEPLOY.md). Vercel **Root Directory must be `merchant-app`**. Env vars are optional — see [`.env.example`](.env.example).
 
 ## Run
 
 ```bash
 npm install
-npm run dev
+npm run dev          # http://127.0.0.1:5173 — UI + demo API
+npm run build        # tsc + Vite production frontend
+npm run lint
+npm test
 ```
 
-Open the Vite URL (normally `http://localhost:5173`). The single Vite process starts both the React UI and the in-memory REST API. Use `npm run build` for a production frontend build.
+One Vite process serves the React UI and the in-memory REST API.
 
 ## Demo flow
 
-1. On Home, tap **Ek Photo Dukaan**.
-2. Use the bundled printed tea-counter rate card or upload an image.
-3. Read the demo-vision disclosure; the current adapter is seeded and does not inspect pixels.
-4. Review and edit the generated catalog.
-5. Show the heuristic restock hint, share QR/link and WhatsApp-ready customer message.
-6. Preview the read-only customer price list.
-7. Use **Profile → Reset demo data** to clear the catalog and restore the seeded scenario.
+1. Profile → **Reset to sample data**.
+2. Home → **Ek Photo Dukaan**.
+3. Use a labelled **sample shop** (repeatable) or photograph a printed rate card (on-device OCR).
+4. Review / edit prices and availability.
+5. Preview `/#/dukaan/meena-kirana`. Show QR, copy link, WhatsApp draft.
+6. Add the matching **sample supplier bill**. Collect ₹45 and confirm the Thums Up basket.
+7. Approve reorder, open the WhatsApp draft, mark paid/received (simulated).
+8. Reset again.
 
-Payments, collection, My QR, settlements and insights remain available to establish the existing merchant shell and seeded Paytm-like amount stream.
-
-## UI routes
+## Hash routes
 
 - `/#/` Home
 - `/#/payments`, `/#/payments/:id`
 - `/#/collect`, `/#/qr`
-- `/#/business`
-- `/#/customers`, `/#/customers/:id`
+- `/#/business`, `/#/customers`, `/#/customers/:id`
 - `/#/settlements`, `/#/insights`
 - `/#/notifications`, `/#/search`, `/#/profile`
-- `/#/dukaan/scan`, `/#/dukaan/manage`, `/#/dukaan/:slug`
+- `/#/dukaan/scan`, `/#/dukaan/manage`, `/#/dukaan/invoice`, `/#/dukaan/:slug`
 
 ## Demo REST API
 
-- `GET /api/health`
-- `GET /api/merchant`
-- `GET /api/transactions`, `GET /api/transactions/:id`
-- `GET /api/customers`, `GET /api/customers/:id`
-- `GET /api/settlements`
-- `GET /api/notifications`
-- `GET /api/insights`
-- `POST /api/payments`
-- `POST /api/settlements/instant`
-- `POST /api/reset`
-- `GET /api/catalog`, `POST /api/catalog`
-- `GET /api/dukaan/:slug`
-- `POST /api/catalog/items`, `POST /api/catalog/items/:id`, `POST /api/catalog/items/:id/remove`
+- `GET /api/health` — `{ official: false, persistence, … }`
+- `GET /api/merchant` · `GET /api/transactions` · `GET /api/customers` · `GET /api/settlements` · `GET /api/notifications`
+- `GET /api/insights` · `GET /api/catalog` · `GET /api/dukaan/:slug`
+- `GET /api/supplier` · `GET /api/supplier-orders` · `GET /api/basket-assignments`
+- `POST /api/catalog` · `POST /api/catalog/items` · `POST /api/catalog/items/:id` · `…/remove`
+- `POST /api/supplier/invoice` · `POST /api/supplier-orders` · `POST /api/supplier-orders/:id/confirm`
+- `POST /api/payments` · `POST /api/transactions/:id/basket` · `…/refund` · `…/confirm`
+- `POST /api/settlements/instant` · `POST /api/notifications/read` · `POST /api/reset`
 
-The API is a Vite development middleware with a seeded in-memory database and localhost CORS. It is demo-only and resets when the dev server restarts.
+Local Vite middleware and the Vercel `api/index.ts` function share `server/demoApi.ts`. Demo-only.
 
 ## Architecture
 
-- `src/domain/metrics.ts` is the single source of truth for dashboard and analytical numbers.
-- `src/intelligence/engine.ts` contains deterministic, replaceable insight rules.
-- `src/services/paytm/PaytmService.ts` is the payment/settlement interface; `ApiPaytmService` calls the local REST API.
-- `server/demoApi.ts` exposes seeded entities and mutations without secrets or external services.
-- `src/store/useMerchantStore.ts` manages reactive UI state and persists the demo under `paytm-merchant-demo-v1`.
-- `src/data/seed.ts` builds a deterministic Hyderabad merchant scenario at 22 Aug 2026, 2:35 pm IST.
+- `src/domain/metrics.ts` — dashboard numbers (do not duplicate in UI).
+- `src/intelligence/engine.ts` + `demand.ts` — deterministic insights and days-of-cover.
+- `src/domain/basketSolver.ts` — exact-sum basket candidates from a ticket amount.
+- `src/services/vision/` — on-device OCR, catalog/invoice parsers, sample fixtures.
+- `src/services/paytm/` — `PaytmService` seam + real `upi://pay` builder.
+- `server/demoApi.ts` — seeded entities, no secrets.
+- `src/store/useMerchantStore.ts` — UI state; persist key `paytm-merchant-demo-v1`.
+- `src/data/seed.ts` — Meena Kirana, 22 Aug 2026, 2:35 pm IST.
 
-## AI extension points
+## Honest limits
 
-Replace `IntelligenceEngine.generate()` with an authenticated server-side model adapter. Keep raw transaction data and secrets server-side, retain deterministic metric functions, validate model output, and show provenance to merchants.
+- Payment **authorisation**, settlement, refund and supplier payout are **simulated**.
+- UPI QR construction is **real**; money moves only if `VITE_MERCHANT_VPA` is a real handle.
+- Sample shops are **fixtures**. A user-supplied photo uses **real on-device OCR**.
+- Stock is a **range / heuristic**, never a fake exact count.
+- WhatsApp is a `wa.me` draft, not Cloud API send.
+- Without Redis, Vercel state is per-instance. `/api/health` reports the mode.
+- No auth, multi-merchant tenancy, live Paytm webhooks, or production hardening.
 
-## Limitations
-
-- All payments, QR scans, refunds, settlement references, and notifications are simulations.
-- Photo interpretation is deterministic filename/size mapping, not production OCR or a real vision model.
-- Restock output is a labelled heuristic; supplier invoice capture, basket decomposition, stockout confidence and supplier reorder are not implemented.
-- The API is available through `npm run dev`; a static production build needs a separately hosted backend.
-- UI persistence and API memory are separate demo projections; reset synchronizes both.
-- There is no authentication, multi-merchant tenancy, bank connectivity, real-time webhook handling, or production security hardening.
+See [docs/FEATURES.md](docs/FEATURES.md) for REAL vs SIMULATED on every screen.
