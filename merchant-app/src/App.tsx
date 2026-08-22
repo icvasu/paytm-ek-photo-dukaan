@@ -209,6 +209,10 @@ function PaymentDetailPage() {
 
 function decomposeBasket(amountPaise: number, items: CatalogItem[]): BasketLine[] {
   const available = items.filter((item) => item.available && item.pricePaise > 0).slice(0, 15)
+  const exact = available.find((item) => item.pricePaise === amountPaise)
+  if (exact) {
+    return [{ skuId: exact.id, itemName: exact.name, quantity: 1, pricePaise: exact.pricePaise }]
+  }
   for (const item of available) {
     if (amountPaise % item.pricePaise === 0 && amountPaise / item.pricePaise <= 6) {
       return [{ skuId: item.id, itemName: item.name, quantity: amountPaise / item.pricePaise, pricePaise: item.pricePaise }]
@@ -523,14 +527,14 @@ function DukaanManagePage() {
         ? <button className="primary full supplier-action" onClick={() => navigate('/dukaan/invoice')}><ReceiptText />Scan supplier bill / बिल जोड़ें</button>
         : <section className="supplier-card">
           <Truck /><div><small>SUPPLIER · DEMO</small><b>{data.supplier.name}</b><p>{data.supplier.lines.length} invoice lines · normal order {formatINR(data.supplier.normalOrderPaise)}</p></div>
-          <button disabled={busy === 'order'} onClick={async () => {
+          <button disabled={busy === 'order' || latestOrder?.status === 'queued'} onClick={async () => {
             setBusy('order')
             try {
               const matching = data.supplier!.lines.filter((line) => reorderForecasts.some((forecast) => forecast.skuId === line.skuId)).map((line) => line.skuId)
               await raiseOrder(matching)
               setMessage('Supplier order queued. Simulated payout note created.')
             } catch (reason) { setMessage(reason instanceof Error ? reason.message : 'Could not raise order') } finally { setBusy('') }
-          }}>{busy === 'order' ? 'Queuing…' : 'Approve reorder'}</button>
+          }}>{busy === 'order' ? 'Queuing…' : latestOrder?.status === 'queued' ? 'Reorder queued' : 'Approve reorder'}</button>
         </section>}
       {latestOrder && <section className={`order-status ${latestOrder.status}`}>
         <div><small>ORDER {latestOrder.status.toUpperCase()} · NO BANK API</small><b>{formatINR(latestOrder.amountPaise)} to {data.supplier?.name}</b><p>{latestOrder.note}</p></div>
