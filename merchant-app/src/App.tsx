@@ -5,8 +5,8 @@ import {
 import {
   ArrowLeft, ArrowRight, Banknote, Bell, BellRing, Building2, Camera, Check,
   ChevronRight, CircleAlert, Clock3, Copy, Eye, Home, Image, IndianRupee, Lightbulb,
-  MessageCircle, Package, Plus, QrCode, RefreshCw, Search, Settings, Sparkles,
-  Store, Trash2, Upload, Users, WalletCards, X,
+  MessageCircle, Package, Plus, QrCode, ReceiptText, RefreshCw, Search, Settings, Sparkles,
+  Store, Trash2, Truck, Upload, Users, WalletCards, X,
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import {
@@ -21,6 +21,8 @@ import { formatINR } from './lib/money'
 import { formatDayLabel, formatTime } from './lib/dates'
 import type { PaymentMethod, Transaction } from './types/models'
 import { demoVisionService } from './services/vision/VisionService'
+import { buildStockForecasts } from './intelligence/engine'
+import type { BasketLine, CatalogItem } from './types/models'
 
 const methodName: Record<PaymentMethod, string> = {
   upi: 'UPI', paytm_wallet: 'Paytm Wallet', card: 'Card', netbanking: 'Net banking',
@@ -35,7 +37,10 @@ function useData() {
   const preferences = useMerchantStore((s) => s.preferences)
   const demoClock = useMerchantStore((s) => s.demoClock)
   const catalog = useMerchantStore((s) => s.catalog)
-  return { merchant, customers, transactions, settlements, notifications, preferences, demoClock, catalog }
+  const supplier = useMerchantStore((s) => s.supplier)
+  const basketAssignments = useMerchantStore((s) => s.basketAssignments)
+  const supplierOrders = useMerchantStore((s) => s.supplierOrders)
+  return { merchant, customers, transactions, settlements, notifications, preferences, demoClock, catalog, supplier, basketAssignments, supplierOrders }
 }
 
 function PageHeader({ title, back, action }: { title: string; back?: boolean; action?: React.ReactNode }) {
@@ -144,8 +149,11 @@ function PaymentDetailPage() {
   const txn = data.transactions.find((t) => t.id === id)
   const refund = useMerchantStore((s) => s.refundTransaction)
   const confirm = useMerchantStore((s) => s.confirmPending)
+  const attachBasket = useMerchantStore((s) => s.attachBasket)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
+  const suggestedBasket = txn && data.catalog ? decomposeBasket(txn.amountPaise, data.catalog.items) : []
+  const existingBasket = data.basketAssignments.find((assignment) => assignment.transactionId === txn?.id)
   if (!txn) return <><PageHeader title="Payment details" back /><main className="page"><EmptyState icon={<CircleAlert />} title="Payment not found" text="This transaction does not exist." /></main></>
   const doRefund = async () => {
     setBusy(true); setMessage('')
@@ -179,11 +187,48 @@ function PaymentDetailPage() {
         <Detail label="Settlement" value={txn.settlementId ? `Settled · ${txn.settlementId}` : txn.status === 'success' ? 'Available to settle' : 'Not applicable'} />
         {txn.note && <Detail label="Note" value={txn.note} />}
       </section>
+      {txn.status === 'success' && data.catalog && <section className="basket-card">
+        <small>PAYMENT → ITEMS · DEMO</small><h2>Yeh payment kis saman ka tha?</h2>
+        {existingBasket
+          ? <p className="basket-result"><Check />{existingBasket.lines.map((line) => `${line.quantity}× ${line.itemName}`).join(', ')}</p>
+          : suggestedBasket.length
+            ? <><p>Amount-based suggestion: {suggestedBasket.map((line) => `${line.quantity}× ${line.itemName}`).join(', ')}</p>
+              <button className="primary full" disabled={busy} onClick={async () => {
+                setBusy(true)
+                try { await attachBasket(txn.id, suggestedBasket); setMessage('Basket attached. Stock forecast updated.') } catch (reason) { setMessage(reason instanceof Error ? reason.message : 'Could not attach basket') } finally { setBusy(false) }
+              }}>Confirm items / सामान जोड़ें</button></>
+            : <p>No exact catalog basket matches {formatINR(txn.amountPaise)}. Collect a catalog-priced payment, then attach it here.</p>}
+        <small>Merchant-confirmed heuristic; Paytm amount alone does not identify every basket.</small>
+      </section>}
       {message && <div className={`alert ${message.includes('success') ? 'success' : 'error'}`}>{message}</div>}
       {txn.status === 'success' && !txn.settlementId && <button className="outline-danger full" disabled={busy} onClick={doRefund}>{busy ? 'Processing refund…' : 'Refund payment'}</button>}
       {txn.status === 'pending' && <div className="button-pair"><button className="secondary" disabled={busy} onClick={() => void doConfirm(false)}>Mark failed</button><button className="primary" disabled={busy} onClick={() => void doConfirm(true)}>{busy ? 'Updating…' : 'Confirm success'}</button></div>}
     </main>
   </>
+}
+
+function decomposeBasket(amountPaise: number, items: CatalogItem[]): BasketLine[] {
+  const available = items.filter((item) => item.available && item.pricePaise > 0).slice(0, 15)
+  for (const item of available) {
+    if (amountPaise % item.pricePaise === 0 && amountPaise / item.pricePaise <= 6) {
+      return [{ skuId: item.id, itemName: item.name, quantity: amountPaise / item.pricePaise, pricePaise: item.pricePaise }]
+    }
+  }
+  for (let first = 0; first < available.length; first += 1) {
+    for (let second = first + 1; second < available.length; second += 1) {
+      for (let q1 = 1; q1 <= 4; q1 += 1) {
+        for (let q2 = 1; q2 <= 4; q2 += 1) {
+          if (available[first].pricePaise * q1 + available[second].pricePaise * q2 === amountPaise) {
+            return [
+              { skuId: available[first].id, itemName: available[first].name, quantity: q1, pricePaise: available[first].pricePaise },
+              { skuId: available[second].id, itemName: available[second].name, quantity: q2, pricePaise: available[second].pricePaise },
+            ]
+          }
+        }
+      }
+    }
+  }
+  return []
 }
 
 function CollectPage() {
@@ -341,10 +386,52 @@ function DukaanScanPage() {
       <SectionTitle>Or use a reliable demo photo</SectionTitle>
       <div className="sample-grid">
         <button onClick={() => void processSample('/demo/meena-kirana-shelf.svg', 'meena-kirana-shelf.svg')}><img src="/demo/meena-kirana-shelf.svg" alt="Meena Kirana shelf demo" /><b>Meena’s shelf</b><small>10 kirana items</small></button>
-        <button onClick={() => void processSample('/demo/tea-counter-rate-card.svg', 'tea-counter-rate-card.svg')}><img src="/demo/tea-counter-rate-card.svg" alt="Printed tea counter rate card demo" /><b>Printed rate card</b><small>6 counter items</small></button>
+        <button onClick={() => void processSample('/demo/tea-counter-rate-card.svg', 'tea-counter-rate-card.svg')}><img src="/demo/tea-counter-rate-card.svg" alt="Printed tea counter rate card demo" /><b>Printed rate card</b><small>12 counter items</small></button>
       </div>
       <div className="demo-boundary"><Sparkles /><p><b>Honest demo boundary</b><br />Seeded photos use deterministic mappings. Other images get a visual-heuristic starter catalog for editing.</p></div>
       <p className="prototype-note">Unofficial hackathon prototype · No real Paytm API or vision model</p>
+    </main>
+  </>
+}
+
+function SupplierInvoicePage() {
+  const navigate = useNavigate()
+  const saveInvoice = useMerchantStore((s) => s.saveSupplierInvoice)
+  const [stage, setStage] = useState<'idle' | 'reading' | 'saving' | 'error'>('idle')
+  const [error, setError] = useState('')
+  const process = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setError('Choose an invoice image.')
+      setStage('error')
+      return
+    }
+    try {
+      setError('')
+      setStage('reading')
+      const result = await demoVisionService.analyzeInvoice({ fileName: file.name, fileSize: file.size, imageType: file.type })
+      setStage('saving')
+      await saveInvoice(result)
+      navigate('/dukaan/manage')
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Could not save invoice')
+      setStage('error')
+    }
+  }
+  if (stage === 'reading' || stage === 'saving') return <>
+    <PageHeader title="Supplier invoice" back />
+    <main className="page centered scan-processing"><div className="spinner" /><small>DEMO VISION · HEURISTIC</small><h1>{stage === 'reading' ? 'Reading supplier bill' : 'Adding stock-in'}</h1><p>{stage === 'reading' ? 'Finding supplier, quantities and unit costs…' : 'Saving supplier and updating catalog ranges…'}</p></main>
+  </>
+  return <>
+    <PageHeader title="Supplier invoice" back />
+    <main className="page">
+      <section className="scan-hero invoice"><span><ReceiptText /></span><small>PHOTO TWO · SUPPLIER SETUP</small><h1>Bill ki photo lo.</h1><p>Demo vision extracts supplier, quantities and unit cost. You approve every later order.</p></section>
+      {error && <div className="alert error"><CircleAlert />{error}</div>}
+      <label className="capture-button"><Camera /><span><b>Take invoice photo</b><small>सप्लायर बिल की फोटो लें</small></span><input type="file" accept="image/*" capture="environment" onChange={(event) => {
+        const file = event.target.files?.[0]
+        if (file) void process(file)
+      }} /></label>
+      <button className="sample-invoice" onClick={() => void process(new File(['demo'], 'tea-counter-invoice.jpg', { type: 'image/jpeg' }))}><ReceiptText /><span><b>Use Sharma Traders demo bill</b><small>4 lines · deterministic offline sample</small></span><ChevronRight /></button>
+      <div className="demo-boundary"><Sparkles /><p><b>DEMO heuristic</b><br />Filename mapping, not production OCR. No payable or bank instruction is created automatically.</p></div>
     </main>
   </>
 }
@@ -355,6 +442,8 @@ function DukaanManagePage() {
   const updateItem = useMerchantStore((s) => s.updateCatalogItem)
   const addItem = useMerchantStore((s) => s.addCatalogItem)
   const removeItem = useMerchantStore((s) => s.removeCatalogItem)
+  const raiseOrder = useMerchantStore((s) => s.raiseSupplierOrder)
+  const confirmOrder = useMerchantStore((s) => s.confirmSupplierOrder)
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState('')
   const catalog = data.catalog
@@ -363,6 +452,9 @@ function DukaanManagePage() {
   const link = `${window.location.origin}${window.location.pathname}#/dukaan/${catalog.slug}`
   const available = catalog.items.filter((item) => item.available)
   const needsAttention = catalog.items.filter((item) => !item.available || item.stockFlag === 'low')
+  const forecasts = buildStockForecasts(data)
+  const reorderForecasts = forecasts.filter((forecast) => forecast.needsReorder)
+  const latestOrder = data.supplierOrders[0]
   const shareText = `Namaste! ${data.merchant.businessName} ka digital price list dekhiye: ${link}\n${available.slice(0, 4).map((item) => `${item.name} – ${formatINR(item.pricePaise)}`).join('\n')}\nAvailability may change.`
   const copy = async (value: string, label: string) => {
     try {
@@ -415,6 +507,32 @@ function DukaanManagePage() {
         <Package />
         <div><b>{needsAttention.length} items need attention</b><p>{needsAttention.length ? needsAttention.map((item) => item.name).slice(0, 3).join(', ') : 'No low-stock visual flags right now.'}</p><small>Photo cues + seeded payment amount matches · not exact inventory</small></div>
       </section>
+      <section className="forecast-list">
+        {forecasts.filter((forecast) => forecast.needsReorder).slice(0, 4).map((forecast) => <article key={forecast.skuId}>
+          <div><b>{forecast.itemName}</b><small>Estimated {forecast.estimatedMin}–{forecast.estimatedMax} · {forecast.confidencePct}% rule confidence</small></div>
+          <strong>{forecast.stockoutDays == null ? 'Low shelf flag' : `~${forecast.stockoutDays} days`}</strong>
+        </article>)}
+      </section>
+      {!data.supplier
+        ? <button className="primary full supplier-action" onClick={() => navigate('/dukaan/invoice')}><ReceiptText />Scan supplier bill / बिल जोड़ें</button>
+        : <section className="supplier-card">
+          <Truck /><div><small>SUPPLIER · DEMO</small><b>{data.supplier.name}</b><p>{data.supplier.lines.length} invoice lines · normal order {formatINR(data.supplier.normalOrderPaise)}</p></div>
+          <button disabled={busy === 'order' || !reorderForecasts.length} onClick={async () => {
+            setBusy('order')
+            try { await raiseOrder(reorderForecasts.map((forecast) => forecast.skuId)); setMessage('Supplier order queued. Simulated payout note created.') } catch (reason) { setMessage(reason instanceof Error ? reason.message : 'Could not raise order') } finally { setBusy('') }
+          }}>{busy === 'order' ? 'Queuing…' : 'Approve reorder'}</button>
+        </section>}
+      {latestOrder && <section className={`order-status ${latestOrder.status}`}>
+        <div><small>ORDER {latestOrder.status.toUpperCase()} · NO BANK API</small><b>{formatINR(latestOrder.amountPaise)} to {data.supplier?.name}</b><p>{latestOrder.note}</p></div>
+        <button className="whatsapp-order" onClick={() => {
+          const text = `Namaste ${data.supplier?.name}, ${data.merchant.businessName} ke liye order:\n${latestOrder.lines.map((line) => `${line.quantity} × ${line.itemName}`).join('\n')}\nTotal quote: ${formatINR(latestOrder.amountPaise)}. Please confirm availability. DEMO draft.`
+          window.open(`https://wa.me/${data.supplier?.phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer')
+        }}><MessageCircle />WhatsApp order draft</button>
+        {latestOrder.status === 'queued' && <button disabled={busy === 'confirm'} onClick={async () => {
+          setBusy('confirm')
+          try { await confirmOrder(latestOrder.id); setMessage('Demo payout confirmed. Stock-in ranges updated.') } catch (reason) { setMessage(reason instanceof Error ? reason.message : 'Could not confirm') } finally { setBusy('') }
+        }}>Simulate payout confirmation</button>}
+      </section>}
       <button className="secondary full rescan" onClick={() => navigate('/dukaan/scan')}><RefreshCw />Scan a different photo</button>
       <p className="prototype-note">Unofficial prototype · Catalog edits are saved by the demo API</p>
     </main>
@@ -646,6 +764,7 @@ function AppShell() {
       <Route path="/search" element={<SearchPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/dukaan/scan" element={<DukaanScanPage />} />
+      <Route path="/dukaan/invoice" element={<SupplierInvoicePage />} />
       <Route path="/dukaan/manage" element={<DukaanManagePage />} />
       <Route path="/dukaan/:slug" element={<PublicDukaanPage />} />
       <Route path="*" element={<NotFound />} />

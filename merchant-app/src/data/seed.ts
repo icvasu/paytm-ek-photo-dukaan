@@ -352,6 +352,9 @@ export function buildSeed(): MerchantStoreData {
     },
     demoClock: DEMO_NOW_ISO,
     catalog: null,
+    supplier: null,
+    basketAssignments: [],
+    supplierOrders: [],
   }
 }
 
@@ -362,4 +365,4 @@ function labelMethod(method: PaymentMethod): string {
   return 'Net banking'
 }
 
-export const SEED_VERSION = 2
+export const SEED_VERSION = 3

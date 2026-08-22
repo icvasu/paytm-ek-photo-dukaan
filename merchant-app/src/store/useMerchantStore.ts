@@ -10,6 +10,8 @@ import type {
   Merchant,
   MerchantPreferences,
   MerchantStoreData,
+  BasketLine,
+  SupplierProfile,
   VisionResult,
   Settlement,
   Transaction,
@@ -37,6 +39,10 @@ interface MerchantStore extends MerchantStoreData {
   updateCatalogItem: (id: string, patch: Partial<Pick<CatalogItem, 'name' | 'pricePaise' | 'available'>>) => Promise<void>
   addCatalogItem: () => Promise<void>
   removeCatalogItem: (id: string) => Promise<void>
+  saveSupplierInvoice: (input: Omit<SupplierProfile, 'id' | 'lastStockInAt'>) => Promise<void>
+  attachBasket: (transactionId: string, lines: BasketLine[]) => Promise<void>
+  raiseSupplierOrder: (skuIds: string[]) => Promise<void>
+  confirmSupplierOrder: (id: string) => Promise<void>
 }
 
 async function apiJson<T>(path: string, init?: RequestInit): Promise<T> {
@@ -47,15 +53,18 @@ async function apiJson<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 async function fetchApiState() {
-  const [merchant, customers, transactions, settlements, notifications, catalog] = await Promise.all([
+  const [merchant, customers, transactions, settlements, notifications, catalog, supplier, supplierOrders, basketAssignments] = await Promise.all([
     apiJson<Merchant>('/api/merchant'),
     apiJson<Customer[]>('/api/customers'),
     apiJson<Transaction[]>('/api/transactions'),
     apiJson<Settlement[]>('/api/settlements'),
     apiJson<AppNotification[]>('/api/notifications'),
     apiJson<MerchantStoreData['catalog']>('/api/catalog'),
+    apiJson<MerchantStoreData['supplier']>('/api/supplier'),
+    apiJson<MerchantStoreData['supplierOrders']>('/api/supplier-orders'),
+    apiJson<MerchantStoreData['basketAssignments']>('/api/basket-assignments'),
   ])
-  return { merchant, customers, transactions, settlements, notifications, catalog }
+  return { merchant, customers, transactions, settlements, notifications, catalog, supplier, supplierOrders, basketAssignments }
 }
 
 export const useMerchantStore = create<MerchantStore>()(
@@ -226,6 +235,43 @@ export const useMerchantStore = create<MerchantStore>()(
         const catalog = await apiJson<MerchantStoreData['catalog']>(`/api/catalog/items/${id}/remove`, { method: 'POST' })
         set({ catalog, actionError: null })
       },
+
+      saveSupplierInvoice: async (input) => {
+        await apiJson('/api/supplier/invoice', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
+        })
+        const apiState = await fetchApiState()
+        set({ ...apiState, actionError: null })
+      },
+
+      attachBasket: async (transactionId, lines) => {
+        await apiJson(`/api/transactions/${transactionId}/basket`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lines }),
+        })
+        const transaction = get().transactions.find((candidate) => candidate.id === transactionId)
+        const assignment = { transactionId, lines, assignedAt: new Date().toISOString(), source: 'merchant' as const }
+        set((state) => ({
+          basketAssignments: [...state.basketAssignments.filter((candidate) => candidate.transactionId !== transactionId), assignment],
+          transactions: state.transactions.map((candidate) => candidate.id === transactionId
+            ? { ...candidate, note: `Items: ${lines.map((line) => `${line.quantity}× ${line.itemName}`).join(', ')}` }
+            : candidate),
+          actionError: transaction ? null : 'Payment not found',
+        }))
+      },
+
+      raiseSupplierOrder: async (skuIds) => {
+        await apiJson('/api/supplier-orders', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ skuIds }),
+        })
+        const apiState = await fetchApiState()
+        set({ ...apiState, actionError: null })
+      },
+
+      confirmSupplierOrder: async (id) => {
+        await apiJson(`/api/supplier-orders/${id}/confirm`, { method: 'POST' })
+        const apiState = await fetchApiState()
+        set({ ...apiState, actionError: null })
+      },
     }),
     {
       name: STORAGE_KEY,
@@ -238,6 +284,9 @@ export const useMerchantStore = create<MerchantStore>()(
         preferences: s.preferences,
         demoClock: s.demoClock,
         catalog: s.catalog,
+        supplier: s.supplier,
+        basketAssignments: s.basketAssignments,
+        supplierOrders: s.supplierOrders,
       }),
     },
   ),

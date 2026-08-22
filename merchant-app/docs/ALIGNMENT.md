@@ -2,9 +2,9 @@
 
 Source of truth: `Paytm_Ek_Photo_Dukaan_Brief.md`. QR Rakshak is a separate concept and is not part of this product.
 
-## Current score: 58/100
+## Current implementation: complete V1 demo loop
 
-The prototype now delivers a coherent **one photo → editable digital dukaan → shareable price list** vertical slice inside a Paytm-for-Business-style shell. It does not yet deliver the full brief's second-photo supplier setup, payment-basket decomposition, probabilistic inventory loop, or reorder/payment action. The score reflects implemented behavior, not intended architecture.
+The prototype now delivers the coherent **one shop photo → editable digital dukaan** hero plus the brief's supporting loop: supplier invoice heuristic, merchant-confirmed payment baskets, rule-based stockout ranges, supplier WhatsApp-ready order context, and an explicitly simulated payout/stock-in confirmation.
 
 | Brief requirement | Status | Evidence / gap |
 | --- | --- | --- |
@@ -18,12 +18,12 @@ The prototype now delivers a coherent **one photo → editable digital dukaan �
 | Stock as range/probability, never fake exact count | Partial | Seeded visual ranges are shown and labelled demo estimates. They are static catalog fields, not calibrated distributions. |
 | Payment-derived restock hints | Partial | A deterministic rule combines visual low/out flags with exact payment-amount matches. It is visibly labelled heuristic/demo; there is no basket decomposition. |
 | Seeded Paytm payment stream | Partial | Seeded merchant transactions exist, but there is no dedicated replay that visibly sharpens stock estimates. |
-| Photo 2: supplier invoice → stock IN and supplier | Missing | No invoice capture, line-item extraction, supplier entity, normal order or payable. |
-| Invoice inflows constrain payment-derived outflows | Missing | No stock ledger or inference loop exists. |
-| Predicted stockout with confidence | Missing | The UI gives low/out hints, not a date/time prediction or confidence band. |
-| One-tap WhatsApp supplier order | Missing | Customer catalog sharing exists; supplier reorder drafting does not. |
-| Queued Paytm supplier payment with approval | Missing | No supplier payout adapter, approval step or amount-locked demo action. |
-| Payment confirmation updates stock IN | Missing | No supplier payment webhook/simulation or resulting stock update. |
+| Photo 2: supplier invoice → stock IN and supplier | Demo complete | Deterministic invoice vision persists supplier, line quantities, unit costs and normal order value. |
+| Invoice inflows constrain payment-derived outflows | Demo complete | Invoice lines establish reorder quantities; confirmed baskets reduce displayed stock ranges. |
+| Predicted stockout with confidence | Demo complete | Rule-based range, observed velocity, days-to-stockout and confidence are shown; no fake exact count. |
+| Supplier reorder | Demo complete | Merchant-approved supplier order creates a notification and order state. |
+| Queued Paytm supplier payment with approval | Demo complete | Explicitly simulated payout note; no bank or Paytm API claim. |
+| Payment confirmation updates stock IN | Demo complete | Simulated confirmation marks the order confirmed and updates catalog stock ranges. |
 | Cached/offline deterministic demo and reset | Mostly complete | Demo mapping is deterministic and offline; reset clears the API catalog. Image-hash caching and a visible replay controller are absent. |
 | Honest real/mock/seeded disclosure | Complete | Home, capture, catalog, public list, QR and insights identify prototype, demo, seeded or heuristic boundaries. No official affiliation is claimed. |
 
@@ -31,11 +31,6 @@ The prototype now delivers a coherent **one photo → editable digital dukaan �
 
 The implemented V0 is intentionally narrower than the complete concept: it proves the memorable cold-start and distribution surface—**one printed photo becomes a useful, editable, shareable dukaan**—without rewriting the merchant app. Payments remain the host data rail, not the pitch.
 
-## Highest-priority gaps
+## Honest remaining production gaps
 
-1. Add the second, supplier-invoice photo and persist supplier, quantity, unit cost and stock-in events.
-2. Expand the tea-counter seed to 10–15 distinct-price items and implement constrained basket decomposition over seeded successful payments.
-3. Replace static stock labels with ranges/confidence that visibly update during a seeded payment replay.
-4. Add a predicted stockout card with merchant approval, supplier WhatsApp draft and clearly simulated Paytm payout.
-5. Simulate payout confirmation and update stock-in, completing the loop.
-6. Add tests for vision fallback, catalog mutations, reset, inference constraints and the complete demo path.
+Production OCR/VLM, calibrated Bayesian inference, cash-sale reconciliation, live Paytm vendor payouts and WhatsApp Cloud delivery remain intentionally out of scope. The V1 path is deterministic, offline-capable and labelled DEMO throughout.

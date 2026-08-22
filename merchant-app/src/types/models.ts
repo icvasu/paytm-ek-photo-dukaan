@@ -32,6 +32,62 @@ export interface CatalogItem {
   category: string
 }
 
+export interface SupplierInvoiceLine {
+  skuId: string
+  itemName: string
+  quantity: number
+  unitCostPaise: number
+}
+
+export interface SupplierProfile {
+  id: string
+  name: string
+  phone: string
+  sourceImageName: string
+  lines: SupplierInvoiceLine[]
+  invoiceTotalPaise: number
+  normalOrderPaise: number
+  lastStockInAt: string
+  disclosure: string
+}
+
+export interface BasketLine {
+  skuId: string
+  itemName: string
+  quantity: number
+  pricePaise: number
+}
+
+export interface BasketAssignment {
+  transactionId: string
+  lines: BasketLine[]
+  assignedAt: string
+  source: 'merchant' | 'demo_decomposition'
+}
+
+export interface SupplierOrder {
+  id: string
+  supplierId: string
+  status: 'queued' | 'confirmed'
+  lines: SupplierInvoiceLine[]
+  amountPaise: number
+  createdAt: string
+  confirmedAt: string | null
+  note: string
+}
+
+export interface StockForecast {
+  skuId: string
+  itemName: string
+  estimatedMin: number
+  estimatedMax: number
+  soldUnits: number
+  dailyVelocity: number
+  stockoutDays: number | null
+  confidencePct: number
+  needsReorder: boolean
+}
+
 export interface DukaanCatalog {
   id: string
   merchantId: string
@@ -152,6 +208,9 @@ export interface MerchantStoreData {
   preferences: MerchantPreferences
   demoClock: string
   catalog: DukaanCatalog | null
+  supplier: SupplierProfile | null
+  basketAssignments: BasketAssignment[]
+  supplierOrders: SupplierOrder[]
 }
 
 export interface CollectPaymentInput {

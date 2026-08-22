@@ -1,7 +1,42 @@
 import { dailySalesSeries, deriveDashboard, hourlyActivity, returningShare, successRateByHour } from '../domain/metrics.ts'
 import { formatINR } from '../lib/money.ts'
 import { weekdayName, parseISO } from '../lib/dates.ts'
-import type { BusinessInsight, MerchantStoreData } from '../types/models.ts'
+import type { BusinessInsight, MerchantStoreData, StockForecast } from '../types/models.ts'
+
+function visualRange(label: string, flag: 'in_stock' | 'low' | 'out') {
+  const values = label.match(/\d+/g)?.map(Number) ?? []
+  if (values.length >= 2) return [values[0], values[1]] as const
+  if (values.length === 1) return [values[0], values[0] + 3] as const
+  return flag === 'out' ? [0, 0] as const : flag === 'low' ? [2, 5] as const : [8, 15] as const
+}
+
+export function buildStockForecasts(data: MerchantStoreData): StockForecast[] {
+  if (!data.catalog) return []
+  const assigned = data.basketAssignments
+  const observedDays = Math.max(1, new Set(data.transactions.map((transaction) => transaction.createdAt.slice(0, 10))).size)
+  return data.catalog.items.map((item) => {
+    const [visualMin, visualMax] = visualRange(item.stockLabel, item.stockFlag)
+    const soldUnits = assigned.flatMap((assignment) => assignment.lines)
+      .filter((line) => line.skuId === item.id)
+      .reduce((sum, line) => sum + line.quantity, 0)
+    const estimatedMin = Math.max(0, visualMin - soldUnits)
+    const estimatedMax = Math.max(estimatedMin, visualMax - soldUnits)
+    const dailyVelocity = soldUnits / observedDays
+    const stockoutDays = dailyVelocity > 0 ? Math.max(0, Math.round((estimatedMin / dailyVelocity) * 10) / 10) : null
+    const needsReorder = item.stockFlag !== 'in_stock' || estimatedMin <= 3 || (stockoutDays !== null && stockoutDays <= 4)
+    return {
+      skuId: item.id,
+      itemName: item.name,
+      estimatedMin,
+      estimatedMax,
+      soldUnits,
+      dailyVelocity,
+      stockoutDays,
+      confidencePct: data.supplier && soldUnits ? 82 : data.supplier || soldUnits ? 68 : 48,
+      needsReorder,
+    }
+  })
+}
 
 export function buildInsights(data: MerchantStoreData): BusinessInsight[] {
   const now = parseISO(data.demoClock)
@@ -37,12 +72,15 @@ export function buildInsights(data: MerchantStoreData): BusinessInsight[] {
         .map((transaction) => transaction.amountPaise),
     )
     const matchingItems = data.catalog.items.filter((item) => popularPricePoints.has(item.pricePaise))
+    const forecasts = buildStockForecasts(data)
+    const urgent = forecasts.filter((forecast) => forecast.needsReorder)
+      .sort((a, b) => (a.stockoutDays ?? 999) - (b.stockoutDays ?? 999))
     insights.push({
       id: 'insight_catalog_restock',
       merchantId: data.merchant.id,
       kind: 'catalog',
       title: unavailable.length ? `${unavailable[0].name} needs attention` : `${low.length} catalog items may run low`,
-      description: `${unavailable.length} unavailable and ${low.length} low-stock items from the photo. ${matchingItems.length} item prices also appear directly in successful payment amounts, so keep those lines visible.`,
+      description: `${unavailable.length} unavailable and ${low.length} low-stock items from the photo. ${matchingItems.length} prices appear in successful tickets. ${urgent[0]?.stockoutDays != null ? `${urgent[0].itemName} may run out in ~${urgent[0].stockoutDays} days (${urgent[0].confidencePct}% rule confidence).` : 'Attach payment baskets to sharpen the forecast.'}`,
       priority: unavailable.length ? 'high' : 'normal',
       metricLabel: 'Dukaan stock hints',
       metricValue: `${unavailable.length + low.length} items`,

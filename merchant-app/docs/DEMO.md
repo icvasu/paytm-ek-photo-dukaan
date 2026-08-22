@@ -19,9 +19,10 @@ The hero path is **one photo → digital dukaan**. Merchant payments are the exi
 7. **Persist** — Catalog was stored through `POST /api/catalog`. Refresh the page; the API-backed list remains.
 8. **Customer list** — Tap Preview to open `/#/dukaan/meena-kirana`. The same items are read-only.
 9. **QR + share** — Return to Manage, show the price-list QR, copy the link, and open the `wa.me` draft. Do not claim API delivery.
-10. **Restock hint** — On the dukaan manager, show unavailable/low photo flags plus overlap with successful seeded Paytm ticket amounts. Call it a heuristic, not a model forecast.
-11. **Existing Paytm loop (30s)** — Collect a payment or My QR scan so judges see the shop already runs on Paytm rails (simulated). Optional: Collect ₹13 / note `fail` for a failed payment.
-12. **Reset again** — Catalog gone; payments seed back. Proves demo-mode, not a production tenant.
+10. **Supplier bill** — Tap **Scan supplier bill**, use Sharma Traders sample. Supplier, line quantities, unit costs and normal order persist through the API; clearly call it a DEMO heuristic.
+11. **Payment → items** — Collect ₹45, open its receipt and confirm the suggested Thums Up basket. Return to Manage; the range/velocity forecast reflects that merchant-confirmed sale.
+12. **Restock action** — Approve reorder, open the WhatsApp supplier draft, then simulate payout confirmation. Notification and catalog ranges update; say clearly that no bank API was called.
+13. **Reset again** — Catalog, supplier, baskets and orders are gone; payments seed back. Proves demo-mode, not a production tenant.
 
 ---
 
