@@ -24,8 +24,18 @@ export interface ParseOutcome {
 }
 
 const CURRENCY = /(?:₹|Rs\.?|RS\.?|INR|rs\.?)/
+/**
+ * Glyphs Tesseract commonly returns in place of ₹ on a photographed price list.
+ *
+ * Only non-digit lookalikes are listed. ₹ is also misread as a leading 7 or 2,
+ * but stripping a digit would silently change the printed price — a wrong
+ * number presented confidently is worse than one the merchant can see and
+ * correct on the review screen, so those are left exactly as read.
+ */
+const CURRENCY_LOOKALIKE = /[¥£€%?#*§]/
+const CURRENCY_MARK = new RegExp(`(?:${CURRENCY.source}|${CURRENCY_LOOKALIKE.source})`)
 const MONEY = new RegExp(
-  `(${CURRENCY.source})?\\s*(\\d[\\dOolIiSsBb.,]{0,7})\\s*(?:\\/-|\\/=|-\\/)?\\s*(${CURRENCY.source})?`,
+  `(${CURRENCY_MARK.source})?\\s*(\\d[\\dOolIiSsBb.,]{0,7})\\s*(?:\\/-|\\/=|-\\/)?\\s*(${CURRENCY_MARK.source})?`,
   'g',
 )
 
@@ -78,9 +88,9 @@ function toPaise(token: string): number | null {
 function cleanName(value: string): string {
   return value
     .replace(/[.·•_\-–—=:|~*]{2,}/g, ' ')
-    .replace(/^[\s.·•_\-–—=:|)\]}>*#/\\]+/, '')
-    .replace(/[\s.·•_\-–—=:|([{<*#/\\]+$/, '')
-    .replace(new RegExp(`^${CURRENCY.source}\\s*`), '')
+    .replace(/^[\s.·•_\-–—=:|)\]}>*#/\\¥£€%?§]+/, '')
+    .replace(/[\s.·•_\-–—=:|([{<*#/\\¥£€%?§]+$/, '')
+    .replace(new RegExp(`^${CURRENCY_MARK.source}\\s*`), '')
     .replace(/\s{2,}/g, ' ')
     .trim()
 }
