@@ -570,6 +570,8 @@
 
 .price-edit input {
   width: 68px;
+  align-self: stretch;
+  min-height: var(--tap);
   border: 0;
   outline: 0;
   background: transparent;

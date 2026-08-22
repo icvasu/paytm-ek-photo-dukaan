@@ -1153,8 +1153,11 @@
   color: var(--color-text-muted);
 }
 
+/* The field itself fills the wrapper so the whole 48px band is a tap target. */
 .search-box input {
   width: 100%;
+  align-self: stretch;
+  min-height: var(--tap);
   border: 0;
   outline: 0;
   background: none;
