@@ -49,7 +49,4 @@ Not this V0. Scoped to ~10–15 items so the owner can review every row in one s
 **What happens on Vercel if two phones hit different instances?**
 Without Redis, state is per-instance memory. `/api/health` tells you. The public slug `meena-kirana` always seeds a demo catalog so a customer QR never 404s on a cold start.
 
-**Why is QR Rakshak in the repo?**
-Abandoned parallel idea. Not this product. Do not demo it.
-
 More: [FEATURES.md](./FEATURES.md) · [PAYTM_INTEGRATION.md](./PAYTM_INTEGRATION.md) · [DEMO.md](./DEMO.md).

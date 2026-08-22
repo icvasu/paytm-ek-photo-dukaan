@@ -42,7 +42,7 @@
 - **Paytm Integration** — The UPI QR and `upi://pay` intent are real NPCI-spec and really open Paytm/GPay/PhonePe; authorisation and settlement are simulated behind a single documented adapter seam, and we label every simulated reference as ours.
 - **AI Innovation** — We invert the payment: a bounded subset-sum solver turns "₹45 arrived" into "1× Thums Up sold" with a ranked, explainable posterior — inference from data Paytm already has, no new hardware.
 - **User Impact** — Meena gets a priced digital storefront in one photo instead of an afternoon of typing, and her stock forecast improves every time she confirms a basket.
-- **Demo Quality** — The whole judged path is covered by a 40-check harness (`node server/verifyJudgePath.mjs`, 40/40) plus **156 passing tests**, and the app refuses honestly when it can't read a photo.
+- **Demo Quality** — The whole judged path is covered by a 40-check harness (`node server/verifyJudgePath.mjs`, 40/40) plus **167 passing tests**, and the app refuses honestly when it can't read a photo.
 - **Build Feasibility** — OCR runs on-device in the browser, so marginal AI inference cost is zero and it works offline; the inference is rule-based, so there is no model to train, no data to collect, and no GPU.
 
 ---
@@ -67,7 +67,7 @@
 
 **Why do the notifications say "simulated"?** *(Bell icon — two titles carry the label: `Supplier order queued (simulated payout)` and `Stock-in confirmed (simulated)`.)* Deliberate. Anything we simulate is labelled as simulated, right in the UI where the merchant sees it — not buried in a README. That's the same honesty rule as the placeholder-VPA warning on the QR.
 
-**Do you have any real user data?** No, and we don't claim any. The seeded shop is clearly labelled demo data. What's real is the engineering: public repo, 156 passing tests, 40-check judge harness.
+**Do you have any real user data?** No, and we don't claim any. The seeded shop is clearly labelled demo data. What's real is the engineering: public repo, 167 passing tests, 40-check judge harness.
 
 ---
 
@@ -95,4 +95,4 @@
 
 ---
 
-*Verified: build clean · lint warnings only · 156 passing tests · judge path 40/40 · OCR harness passes · `/tesseract/*` and both demo JPEGs serve from local and production.*
+*Verified: build clean · lint warnings only · 167 passing tests · judge path 40/40 · OCR harness passes · `/tesseract/*` and both demo JPEGs serve from local and production.*

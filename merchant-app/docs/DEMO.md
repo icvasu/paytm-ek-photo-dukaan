@@ -72,7 +72,7 @@ The seeded merchant is **Meena Kirana & General Store** (owner Meena Reddy), so 
 
 ## Timing
 
-Use [SPEAKER_SCRIPT.md](./SPEAKER_SCRIPT.md) for the 5-minute cut. Do not open QR Rakshak, GST, or a chatbot. Sample shops and the seeded payment stream work with no external model and no network.
+Use [SPEAKER_SCRIPT.md](./SPEAKER_SCRIPT.md) for the 5-minute cut. Do not open GST, khata reminders, or a chatbot. Sample shops and the seeded payment stream work with no external model and no network.
 
 The sample *photos* also need no external service, but the first read of the session does pull the OCR engine and English model (~6 MB) from our own origin. Tap one once before you present so it is warm; on a hostile venue network a cold read is the slowest thing in the demo.
 

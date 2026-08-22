@@ -135,4 +135,3 @@ Home has one **Ek Photo Dukaan** shortcut, under the **More for your business** 
 - Do not add a second state store for catalog.
 - Do not compute dashboard totals in React; use `deriveDashboard`.
 - Do not train or fake a learning curve on stage.
-- Do not merge QR-missing-payment (Rakshak) into this flow.
