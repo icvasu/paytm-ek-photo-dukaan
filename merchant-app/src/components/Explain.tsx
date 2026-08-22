@@ -1,6 +1,7 @@
 import type { BasketSolution } from '../domain/basketSolver'
 import type { DemandReport } from '../intelligence/demand'
 import { extractionEvidenceFor } from '../services/vision/catalogPipeline'
+import { invoiceEvidenceFor } from '../services/vision/invoicePipeline'
 import type { CatalogItem, CatalogProvenance } from '../types/models'
 import type { UpiIntent } from '../services/paytm/upi'
 import './explain.css'
@@ -192,6 +193,75 @@ export function WhyCatalog({ provenance, sourceImageName }: {
         Nothing here was invented: every row comes from text the reader actually saw, and skipped
         lines are listed with the reason. A price list shows prices, not shelf counts, so stock stays
         an estimate until you correct it.
+      </Note>
+    </Why>
+  )
+}
+
+/**
+ * OCR → row parsing → catalog matching evidence for a supplier bill.
+ *
+ * The arithmetic check is the headline here: a bill row that prints
+ * `qty × rate = amount` verifies itself, which is stronger evidence than
+ * anything available on a rate card.
+ */
+export function WhyInvoice({ sourceImageName }: { sourceImageName: string | undefined }) {
+  const evidence = invoiceEvidenceFor(sourceImageName)
+  if (!evidence) return null
+
+  const unlinked = evidence.resolved.filter((line) => !line.linked)
+
+  return (
+    <Why label="How this bill was read" badge={evidence.engine}>
+      <Row label="Step 1 — read text" value={`${evidence.engine} on this device`} />
+      <Row label="Lines read" value={evidence.linesRead} />
+      <Row label="Mean text confidence" value={`${evidence.meanOcrConfidencePct}%`} />
+      <Row label="Step 2 — find qty and rate" value="Per row, rightmost triple that multiplies out" />
+      <Row label="Rows kept" value={evidence.rowsAccepted} />
+      <Row label="Rows skipped" value={evidence.rowsRejected} />
+      <Row label="Arithmetic verified" value={`${evidence.verifiedCount} of ${evidence.rowsAccepted} rows`} />
+      <Row label="Step 3 — match your catalog" value="Token-set ratio + normalised edit distance" />
+      <Row label="Linked to a catalog item" value={`${evidence.linkedCount} of ${evidence.rowsAccepted}`} />
+      <Row label="Rows add up to" value={`₹${(evidence.computedTotalPaise / 100).toLocaleString('en-IN')}`} />
+      {evidence.readTotalPaise !== null && (
+        <Row label="Total printed on the bill"
+          value={`₹${(evidence.readTotalPaise / 100).toLocaleString('en-IN')}${evidence.totalAgrees ? ' — agrees' : ' — does not agree'}`} />
+      )}
+      <Row label="Time on device" value={`${(evidence.durationMs / 1000).toFixed(1)}s`} />
+
+      {evidence.resolved.length > 0 && (
+        <div className="why-evidence">
+          <h4>Rows read from the bill</h4>
+          {evidence.resolved.slice(0, 8).map((line) => (
+            <div key={`${line.skuId}-r`}>
+              <code>{line.sourceLine}</code>
+              <span>
+                → <b>{line.quantity} × {line.itemName}</b> at ₹{(line.unitCostPaise / 100).toFixed(2)}
+                {line.arithmeticVerified ? ' · amount checks out' : ' · no printed amount to check'}
+                {` · ${line.confidencePct}% confidence`}
+                {line.linked ? '' : ' · not in your catalog'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {evidence.rejected.length > 0 && (
+        <div className="why-evidence">
+          <h4>Skipped lines</h4>
+          {evidence.rejected.slice(0, 6).map((line, index) => (
+            <div key={`${line.text}-${index}`}>
+              <code>{line.text}</code>
+              <span>→ {line.reason}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Note>
+        A row only counts when the reader found both a quantity and a unit cost — a guessed quantity
+        would go straight into the stock ledger and the reorder total.
+        {unlinked.length > 0 && ` ${unlinked.length} row${unlinked.length === 1 ? '' : 's'} did not match anything in your catalog, so restock cannot order ${unlinked.length === 1 ? 'it' : 'them'} yet.`}
       </Note>
     </Why>
   )

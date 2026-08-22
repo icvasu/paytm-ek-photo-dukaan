@@ -242,15 +242,11 @@ export const useMerchantStore = create<MerchantStore>()(
         await apiJson(`/api/transactions/${transactionId}/basket`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lines }),
         })
-        const transaction = get().transactions.find((candidate) => candidate.id === transactionId)
-        const assignment = { transactionId, lines, assignedAt: new Date().toISOString(), source: 'merchant' as const }
-        set((state) => ({
-          basketAssignments: [...state.basketAssignments.filter((candidate) => candidate.transactionId !== transactionId), assignment],
-          transactions: state.transactions.map((candidate) => candidate.id === transactionId
-            ? { ...candidate, note: `Items: ${lines.map((line) => `${line.quantity}× ${line.itemName}`).join(', ')}` }
-            : candidate),
-          actionError: transaction ? null : 'Payment not found',
-        }))
+        // Refetch rather than patch: the API clamps names and quantities, and the
+        // stock forecast on every other screen is derived from these assignments,
+        // so a locally-invented copy would drift from what was actually recorded.
+        const apiState = await fetchApiState()
+        set({ ...apiState, actionError: null })
       },
 
       raiseSupplierOrder: async (skuIds) => {

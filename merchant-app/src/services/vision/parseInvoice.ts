@@ -120,7 +120,9 @@ function cleanName(value: string): string {
     .replace(/[.·•_=~*]{2,}/g, ' ')
     .replace(/^[\s.·•_=:|)\]}>*#/\\-]+/, '')
     .replace(/[\s.·•_=:|([{<*#/\\-]+$/, '')
-    .replace(new RegExp(`${CURRENCY.source}\\s*$`), '')
+    // Only a standalone currency token. Without the leading boundary this eats
+    // the "rs" out of "Traders" and renames the supplier.
+    .replace(new RegExp(`(?:^|\\s)${CURRENCY.source}\\s*$`), '')
     .replace(/\b(?:x|X|×|@|nos?|pcs?|pkt|pkts|units?|box|boxes|crate|crates|case|cases|ctn)\b\s*$/i, '')
     .replace(/\s{2,}/g, ' ')
     .trim()
@@ -149,6 +151,17 @@ function plausibleQuantity(hit: NumberHit): boolean {
   return !hit.hasDecimals && Number.isInteger(hit.value) && hit.value >= 1 && hit.value <= MAX_QUANTITY
 }
 
+/** Units that make a number a pack size ("750 ml"), never an order quantity. */
+const PACK_UNIT = /^\s*(?:ml|l|ltr|lt|litre|liter|g|gm|gms|gram|grams|kg|kgs|mg|cl|oz|inch|cm|mm|w|watt)\b/i
+
+/**
+ * True when the number is immediately followed by a measurement unit, so it
+ * belongs to the product name. "Limca 750 ml 32.00" must not order 750 Limcas.
+ */
+function isPackSize(text: string, hit: NumberHit): boolean {
+  return PACK_UNIT.test(text.slice(hit.end))
+}
+
 function plausibleUnitCost(hit: NumberHit): boolean {
   return hit.paise >= MIN_UNIT_COST_PAISE && hit.paise <= MAX_UNIT_COST_PAISE
 }
@@ -159,10 +172,11 @@ function plausibleUnitCost(hit: NumberHit): boolean {
  * Rightmost because bill columns run name → qty → rate → amount, so any number
  * inside the product name sits to the left of the real figures.
  */
-function findVerifiedTriple(hits: NumberHit[]) {
+function findVerifiedTriple(text: string, hits: NumberHit[]) {
   for (let index = hits.length - 3; index >= 0; index -= 1) {
     const [qty, rate, amount] = [hits[index], hits[index + 1], hits[index + 2]]
     if (!plausibleQuantity(qty) || !plausibleUnitCost(rate)) continue
+    if (isPackSize(text, qty)) continue
     const expected = qty.value * rate.paise
     // Bills round the extended amount to the rupee often enough that an exact
     // match is too strict; half a percent still rules out a coincidence.
@@ -177,12 +191,12 @@ function findVerifiedTriple(hits: NumberHit[]) {
 /** Explicit `24 x 36.00` / `24 @ 36` notation, which states the quantity outright. */
 function findExplicitPair(text: string, hits: NumberHit[]) {
   const pattern = /(\d{1,3})\s*(?:x|X|×|@)\s*(?:₹|Rs\.?|INR)?\s*(\d[\d.,]*)/g
-  let match = pattern.exec(text)
-  while (match) {
-    const qty = hits.find((hit) => hit.start === match!.index)
-    const rate = hits.find((hit) => hit.start >= match!.index && hit.end <= match!.index + match![0].length && hit !== qty)
+  for (let match = pattern.exec(text); match; match = pattern.exec(text)) {
+    const from = match.index
+    const to = match.index + match[0].length
+    const qty = hits.find((hit) => hit.start === from)
+    const rate = hits.find((hit) => hit !== qty && hit.start >= from && hit.end <= to)
     if (qty && rate && plausibleQuantity(qty) && plausibleUnitCost(rate)) return { qty, rate }
-    match = pattern.exec(text)
   }
   return null
 }
@@ -247,7 +261,7 @@ export function parseInvoiceLines(ocrLines: OcrLine[]): InvoiceParseOutcome {
       continue
     }
 
-    const triple = findVerifiedTriple(hits)
+    const triple = findVerifiedTriple(text, hits)
     const pair = triple ? null : findExplicitPair(text, hits)
 
     let quantity: number
@@ -273,7 +287,8 @@ export function parseInvoiceLines(ocrLines: OcrLine[]): InvoiceParseOutcome {
       // Fall back to the last two numbers as quantity and unit cost, which is
       // the common two-column bill. Anything less is not enough to record.
       const tail = hits.slice(-2)
-      if (tail.length === 2 && plausibleQuantity(tail[0]) && plausibleUnitCost(tail[1]) && !tail[0].hasCurrencyMark) {
+      if (tail.length === 2 && plausibleQuantity(tail[0]) && plausibleUnitCost(tail[1])
+        && !tail[0].hasCurrencyMark && !isPackSize(text, tail[0])) {
         quantity = tail[0].value
         unitCostPaise = tail[1].paise
         nameEnd = tail[0].start

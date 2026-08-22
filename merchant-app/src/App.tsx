@@ -27,12 +27,13 @@ import {
   loadSampleInvoice, sampleShopForCatalog, type OcrPhase,
 } from './services/vision/catalogPipeline'
 import { SAMPLE_SHOPS } from './services/vision/VisionService'
+import { NoInvoiceFoundError, analyzeInvoicePhoto } from './services/vision/invoicePipeline'
 import { solveBasket, unitsSoldBySku } from './domain/basketSolver'
 import {
   collectIntent, merchantVpa, shopIntent, supportsUpiIntentLink, type UpiIntent,
 } from './services/paytm/upi'
-import { WhyBasket, WhyCatalog, WhyRestock, WhyUpi } from './components/Explain'
-import type { BasketLine, CatalogItem, DukaanCatalog } from './types/models'
+import { WhyBasket, WhyCatalog, WhyInvoice, WhyRestock, WhyUpi } from './components/Explain'
+import type { BasketLine, CatalogItem, DukaanCatalog, SupplierProfile } from './types/models'
 
 const methodName: Record<PaymentMethod, string> = {
   upi: 'UPI', paytm_wallet: 'Paytm Wallet', card: 'Card', netbanking: 'Net banking',
@@ -826,59 +827,127 @@ function SupplierInvoicePage() {
   const navigate = useNavigate()
   const toast = useToast()
   const saveInvoice = useMerchantStore((s) => s.saveSupplierInvoice)
+  const fileInput = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
-  const shop = sampleShopForCatalog(data.catalog?.items)
+  const [phase, setPhase] = useState<OcrPhase | null>(null)
+  const [error, setError] = useState<{ title: string; text: string } | null>(null)
+  const reading = phase !== null
+  const progress = Math.round((phase?.progress ?? 0) * 100)
 
-  const saveSupplier = async () => {
+  const catalog = data.catalog
+
+  /* The API refuses a bill without a catalog, so do not offer the camera yet. */
+  if (!catalog) return <>
+    <PageHeader title="Supplier bill" back />
+    <Page><h1 className="sr-only">Supplier bill</h1>
+      <EmptyState icon={<ReceiptText />} title="Build your dukaan first"
+        text="A supplier bill is matched against your own items, so the price list has to exist before the bill can be read." />
+      <button className="primary full" onClick={() => navigate('/dukaan/scan')}><Camera />Take shop photo</button>
+    </Page>
+  </>
+
+  const shop = sampleShopForCatalog(catalog.items)
+  const sample = loadSampleInvoice(shop)
+
+  const commit = async (
+    run: () => Promise<Omit<SupplierProfile, 'id' | 'lastStockInAt'>>,
+    message: string,
+  ) => {
+    setError(null)
     setBusy(true)
     try {
-      await saveInvoice(loadSampleInvoice(shop))
-      toast({ text: 'Supplier bill saved. Nothing is payable until you approve it.' })
+      await saveInvoice(await run())
+      toast({ text: message })
       navigate('/dukaan/manage')
     } catch (reason) {
-      toast({ text: reason instanceof Error ? reason.message : 'Could not save the bill', tone: 'error' })
-    } finally { setBusy(false) }
+      if (reason instanceof NoInvoiceFoundError) {
+        setError({ title: 'No bill rows in that photo', text: reason.message })
+      } else if (reason instanceof OcrUnavailableError) {
+        setError({ title: 'The reader could not start', text: `${reason.message} You can still load the sample bill below.` })
+      } else {
+        setError({ title: 'That bill could not be read', text: reason instanceof Error ? reason.message : 'Please try another photo.' })
+      }
+    } finally {
+      setBusy(false)
+      setPhase(null)
+    }
   }
 
-  const invoice = loadSampleInvoice(shop)
+  const onFile = (file: File | undefined) => {
+    if (!file) return
+    setPhase({ progress: 0, label: 'Starting the reader' })
+    void commit(
+      () => analyzeInvoicePhoto(file, file.name, catalog.items, setPhase),
+      'Supplier bill read. Check every quantity before ordering.',
+    )
+  }
+
+  if (reading) return <>
+    <PageHeader title="Reading your bill" />
+    <Page className="scan-page">
+      <h1>Reading your bill</h1>
+      <p aria-live="polite">{phase.label} — this runs on your phone, nothing is uploaded.</p>
+      <div className="scan-progress" role="progressbar" aria-valuenow={progress} aria-valuemin={0}
+        aria-valuemax={100} aria-label="Reading progress">
+        <span style={{ width: `${Math.max(6, progress)}%` }} />
+      </div>
+      <p className="scan-progress-value num">{progress}%</p>
+      <ListSkeleton rows={4} />
+    </Page>
+  </>
 
   return <>
     <PageHeader title="Supplier bill" back />
     <Page className="scan-page">
       <section className="scan-hero">
         <span aria-hidden="true"><ReceiptText /></span>
-        <h1>Add your supplier bill</h1>
-        <p>Once your usual order is on file, restock suggestions can quote a real
-          total instead of a guess.</p>
+        <h1>Photograph your supplier bill</h1>
+        <p>The bill says what came in and at what cost. Read on this phone, matched
+          against your own items, so restock can quote a real total.</p>
       </section>
+
+      {error && <div className="alert error" role="alert">
+        <CircleAlert aria-hidden="true" />
+        <div><b>{error.title}</b><p>{error.text}</p></div>
+      </div>}
+
+      <input ref={fileInput} type="file" accept="image/*" capture="environment" className="sr-only"
+        onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = '' }} />
+      <button className="primary full" disabled={busy} onClick={() => fileInput.current?.click()}>
+        <Camera aria-hidden="true" />Take or choose a photo of the bill
+      </button>
+
+      <div className="scan-divider"><span>or load a sample bill</span></div>
 
       <section className="invoice-preview">
         <div className="invoice-head">
           <Truck aria-hidden="true" />
-          <div><b>{invoice.name}</b><small className="num">{invoice.phone}</small></div>
+          <div><b>{sample.name}</b><small className="num">{sample.phone}</small></div>
         </div>
         <ul>
-          {invoice.lines.map((line) => <li key={line.skuId}>
+          {sample.lines.map((line) => <li key={line.skuId}>
             <span>{line.itemName}</span>
             <span className="num">{line.quantity} × {formatINR(line.unitCostPaise)}</span>
           </li>)}
         </ul>
         <div className="invoice-total">
           <span>Usual order</span>
-          <strong className="num">{formatINR(invoice.invoiceTotalPaise)}</strong>
+          <strong className="num">{formatINR(sample.invoiceTotalPaise)}</strong>
         </div>
       </section>
 
-      <button className="primary full" disabled={busy} onClick={() => void saveSupplier()}>
-        <Upload aria-hidden="true" />{busy ? 'Saving…' : 'Save this supplier'}
+      <button className="secondary full" disabled={busy}
+        onClick={() => void commit(async () => sample, 'Sample supplier bill loaded. Nothing is payable until you approve it.')}>
+        <Upload aria-hidden="true" />{busy ? 'Saving…' : 'Use this sample bill instead'}
       </button>
 
       <div className="note">
         <Info aria-hidden="true" />
         <div>
           <b>Nothing is paid automatically</b>
-          <p>{invoice.disclosure} Saving it only updates stock estimates — no payable and
-            no bank instruction is created without your approval.</p>
+          <p>A photograph is read on this device and never uploaded. The sample bill is
+            pre-written and clearly labelled as such. Either way, no payable and no bank
+            instruction is created without your approval.</p>
         </div>
       </div>
     </Page>
@@ -1089,6 +1158,8 @@ function DukaanManagePage() {
               <p className="num">{data.supplier.lines.length} bill lines · usual order {formatINR(data.supplier.normalOrderPaise)}</p>
             </div>
           </div>
+          <p className="supplier-disclosure">{data.supplier.disclosure}</p>
+          <WhyInvoice sourceImageName={data.supplier.sourceImageName} />
           <button className="primary full" style={{ marginTop: 'var(--space-3)' }}
             disabled={busy === 'order' || latestOrder?.status === 'queued'}
             onClick={async () => {
@@ -1728,7 +1799,10 @@ function AppShell() {
   const bootStatus = useMerchantStore((state) => state.bootStatus)
   const actionError = useMerchantStore((state) => state.actionError)
   const syncFromApi = useMerchantStore((state) => state.syncFromApi)
-  useEffect(() => { void syncFromApi() }, [syncFromApi])
+  /* The store starts 'idle' and returns to 'idle' once synced, so the first
+     paint would otherwise flash an empty dukaan before the data lands. */
+  const [firstSyncDone, setFirstSyncDone] = useState(false)
+  useEffect(() => { void syncFromApi().finally(() => setFirstSyncDone(true)) }, [syncFromApi])
 
   /* Move focus to the main region after every route change. */
   useEffect(() => {
@@ -1738,7 +1812,7 @@ function AppShell() {
 
   const hideNav = ['/collect', '/qr', '/search', '/notifications', '/insights', '/settlements', '/customers', '/dukaan'].some((p) => location.pathname.startsWith(p)) || /^\/payments\/.+/.test(location.pathname)
 
-  if (bootStatus === 'loading') {
+  if (bootStatus === 'loading' || !firstSyncDone) {
     return <div className="device-shell"><div className="app-surface no-nav">
       <PageHeader title="Loading" brand />
       <Page>
