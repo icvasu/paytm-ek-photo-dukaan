@@ -227,17 +227,23 @@ steps.
 **Tap sequence:**
 
 1. Still on Manage, scroll to the supplier section. Tap **Add supplier bill** if
-   no supplier is on file, then **Save this supplier**.
+   no supplier is on file, then **Use this sample bill instead**.
+   (The button above it, **Take or choose a photo of the bill**, runs the real
+   on-device read. Take that path only if a judge hands you a printed bill —
+   the sample keeps the ₹7,175 reorder total repeatable on stage.)
 2. Back on Manage, tap **Approve reorder**.
 3. Tap **Send on WhatsApp**. Let the draft open. Do not send it.
 4. Come back and tap **Mark as paid and received**.
 
-**Say:**
+**Say (this wording is true for the sample tap):**
 
-> Second photo, the supplier bill. These arrive as WhatsApp images already. It
-> reads who supplied it, what came in, at what unit cost. Now the system knows
-> what a full shelf looks like, which is what makes the sales side identifiable.
-> You cannot sell what you never bought.
+> Second photo, the supplier bill. These arrive as WhatsApp images already. This
+> one is our labelled sample so the number stays repeatable, and the same screen
+> will photograph a real bill — it reads who supplied it, what came in and at
+> what unit cost, and it checks that quantity times rate equals the printed
+> amount before it believes a row. Now the system knows what a full shelf looks
+> like, which is what makes the sales side identifiable. You cannot sell what
+> you never bought.
 >
 > Four items are running low. She taps approve, and the order is drafted to Sri
 > Balaji Distributors on WhatsApp, which is where she already orders, and a Paytm

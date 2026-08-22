@@ -38,7 +38,11 @@ The seeded merchant is **Meena Kirana & General Store** (owner Meena Reddy), so 
 11. **Share** — On Manage, show the price-list QR, copy the link, and open the `wa.me` draft. Do not claim API delivery.
 12. **Payment → items** — Home → **Collect** → `45` → **Collect ₹45** → **View payment**. Under *What did this customer buy?* the solver proposes **1× Thums Up 750 ml**. Open **How this was inferred**: bounded multi-subset-sum, 14 combinations explored, 1 exact-sum basket, confidence capped at 92%. Tap **Confirm items**.
 13. **Stock drops** — Back on Manage, the Thums Up forecast moves from **about 2–3 left** (no cover figure, nothing confirmed yet) to **about 1–2 left, ~2 days** of cover. Say both numbers out loud so the change is audible.
-14. **Supplier bill** — Tap **Add supplier bill**, then **Save this supplier**. For the kirana shelf this is **Sri Balaji Distributors** with a usual order of **₹7,175** (Aashirvaad ×10, Fortune Oil ×24, Thums Up ×24, Amul Milk ×30). Call it a labelled sample bill, not a live read.
+14. **Supplier bill (photo two)** — Tap **Add supplier bill**. The page offers two paths and they are labelled differently, so say which one you took:
+    - **Take or choose a photo of the bill** runs the same on-device OCR as the shelf photo, then checks each row's `qty × rate = amount` arithmetic and fuzzy-matches the item against your own catalog. Use this if a judge hands you a printed bill. Unreadable rows are listed with the reason instead of being guessed.
+    - **Use this sample bill instead** loads the labelled fixture. For the kirana shelf that is **Sri Balaji Distributors**, usual order **₹7,175** (Aashirvaad ×10, Fortune Oil ×24, Thums Up ×24, Amul Milk ×30). Repeatable, so this is the safer judged path — but call it a sample, not a live read.
+
+    Either way, the saved card shows the disclosure verbatim and **How this bill was read** opens the row-by-row evidence for the photo path.
 15. **Restock action** — **Approve reorder** (4 items are flagged: Aashirvaad Atta, Fortune Oil, Thums Up, Amul Milk). Open the WhatsApp supplier draft, then **Mark as paid and received**. The order card carries the disclosure verbatim: *Merchant approved. Simulated Paytm vendor payout queued; no bank API called.* Point at it.
 16. **Reset again** — Catalog, supplier, baskets and orders are gone; payments seed back. Proves demo-mode, not a production tenant.
 
