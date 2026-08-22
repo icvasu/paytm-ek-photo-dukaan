@@ -117,8 +117,6 @@ Every route is captured in [`merchant-app/docs/screens/`](merchant-app/docs/scre
 | Stock | **Range plus heuristic**, never a fake exact count. Demand is exponential smoothing with stated limits. |
 | Persistence on Vercel | Per-instance memory unless Redis env vars are set; `/api/health` reports the mode. The public `meena-kirana` slug always seeds so a customer QR never 404s. |
 
-Do not say "Paytm is live" or "the model learned today."
-
 ---
 
 ## Docs
@@ -137,17 +135,6 @@ Do not say "Paytm is live" or "the model learned today."
 Concept brief: [`Paytm_Ek_Photo_Dukaan_Brief.md`](Paytm_Ek_Photo_Dukaan_Brief.md). Theme list: [`Paytm_AI_Hackathon_Themes_Hyderabad.pdf`](Paytm_AI_Hackathon_Themes_Hyderabad.pdf).
 
 ---
-
-## Layout
-
-```
-merchant-app/          product — set this as the Vercel root
-  src/                 React merchant shell, dukaan, intelligence
-  server/demoApi.ts    seeded in-memory (or Redis) REST API
-  server/verify*.mjs   judge-path and OCR harnesses
-  docs/                judge docs and screenshots
-CONTRIBUTING.md        branch workflow
-```
 
 Stack: React 19 · TypeScript · Vite 8 · hash router · Zustand · Recharts · `qrcode.react` · `tesseract.js` · Vite middleware / Vercel function · optional Upstash Redis.
 
