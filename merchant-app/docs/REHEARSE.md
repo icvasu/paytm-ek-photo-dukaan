@@ -1,3 +1,5 @@
+Team SEER · Vasu Gupta & Jai
+
 # Ek Photo Dukaan — rehearsal card
 
 ## What to say per slide
