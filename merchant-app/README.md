@@ -2,6 +2,8 @@
 
 An unofficial Paytm-for-Business-style merchant web app built for the “AI for Small Businesses” hackathon theme. This is a local prototype, is not affiliated with or endorsed by Paytm, and does not use real Paytm APIs or credentials.
 
+**Teammate docs (Ek Photo Dukaan V0):** [docs/V0.md](docs/V0.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/DEMO.md](docs/DEMO.md) · [docs/TEAM.md](docs/TEAM.md). Repo clone and branches: root [CONTRIBUTING.md](../CONTRIBUTING.md).
+
 ## Run
 
 ```bash
@@ -48,6 +50,9 @@ Open the Vite URL (normally `http://localhost:5173`). The single Vite process st
 - `POST /api/payments`
 - `POST /api/settlements/instant`
 - `POST /api/reset`
+- `GET /api/catalog`, `POST /api/catalog`
+- `GET /api/dukaan/:slug`
+- `POST /api/catalog/items`, `POST /api/catalog/items/:id`, `POST /api/catalog/items/:id/remove`
 
 The API is a Vite development middleware with a seeded in-memory database and localhost CORS. It is demo-only and resets when the dev server restarts.
 
