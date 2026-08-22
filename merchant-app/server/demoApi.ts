@@ -64,7 +64,7 @@ let sharedStoreVerified = false
 
 function noteStoreFailure(reason: unknown) {
   persistenceMode = 'shared-redis-unreachable-using-memory'
-  persistenceError = reason instanceof Error ? reason.message.slice(0, 200) : 'Shared demo store request failed'
+  persistenceError = reason instanceof Error ? reason.message.slice(0, 200) : 'Shared store request failed'
 }
 
 function noteStoreSuccess() {
@@ -89,7 +89,7 @@ async function redisCommand(command: string[]) {
       signal: controller.signal,
     })
     const payload = await response.json() as { result?: unknown; error?: string }
-    if (!response.ok || payload.error) throw new Error(payload.error ?? `Shared demo store returned ${response.status}`)
+    if (!response.ok || payload.error) throw new Error(payload.error ?? `Shared store returned ${response.status}`)
     return payload.result
   } finally {
     clearTimeout(timer)
@@ -172,7 +172,7 @@ export function json(res: ServerResponse, status: number, value: unknown) {
     if (typeof text !== 'string') text = 'null'
   } catch {
     res.statusCode = 500
-    text = JSON.stringify({ error: 'The demo server built a response it could not serialise.', code: 'response_encoding' })
+    text = JSON.stringify({ error: 'The server built a response it could not serialise.', code: 'response_encoding' })
   }
   res.end(text)
 }
@@ -208,7 +208,7 @@ async function body(req: IncomingMessage): Promise<Record<string, unknown>> {
     const buffer = Buffer.from(chunk)
     bytes += buffer.length
     if (bytes > MAX_BODY_BYTES) {
-      throw new BadRequestError('Request body is too large for this demo API.', 'body_too_large')
+      throw new BadRequestError('Request body is too large.', 'body_too_large')
     }
     chunks.push(buffer)
   }
@@ -364,7 +364,7 @@ async function routeDemoApi(req: IncomingMessage, res: ServerResponse) {
   }
   if (req.method === 'POST' && path === '/api/catalog/items') {
     if (!db.catalog) return json(res, 404, { error: 'Create a catalog first' })
-    if (db.catalog.items.length >= 60) return json(res, 400, { error: 'This demo catalog holds 60 items at most' })
+    if (db.catalog.items.length >= 60) return json(res, 400, { error: 'This catalog holds 60 items at most' })
     const input = await body(req) as { name?: unknown; pricePaise?: unknown }
     const name = String(input.name ?? '').replace(/\s+/g, ' ').trim().slice(0, 80)
     const rawPrice = Number(input.pricePaise)
@@ -398,7 +398,7 @@ async function routeDemoApi(req: IncomingMessage, res: ServerResponse) {
     const invoiceTotalPaise = lines.reduce((sum, line) => sum + line.quantity * line.unitCostPaise, 0)
     db.supplier = {
       id: 'supplier_primary',
-      name: String(input.name || 'Demo Supplier').slice(0, 80),
+      name: String(input.name || 'Unnamed supplier').slice(0, 80),
       phone: String(input.phone || '').slice(0, 24),
       sourceImageName: String(input.sourceImageName || 'supplier-invoice').slice(0, 100),
       lines,
@@ -470,7 +470,9 @@ async function routeDemoApi(req: IncomingMessage, res: ServerResponse) {
     db.supplierOrders.unshift(order)
     addNotification({
       id: createId('ntf'), merchantId: db.merchant.id, type: 'business_alert',
-      title: 'Supplier order queued (DEMO)',
+      // The honesty label stays; only the word changes, so the notification
+      // still tells the merchant no bank was instructed.
+      title: 'Supplier order queued (simulated payout)',
       body: `${db.supplier.name} · ₹${(order.amountPaise / 100).toLocaleString('en-IN')} · simulated payout only`,
       read: false, createdAt: order.createdAt, relatedEntityId: order.id,
       relatedRoute: '/dukaan/manage', priority: 'high',
@@ -504,7 +506,7 @@ async function routeDemoApi(req: IncomingMessage, res: ServerResponse) {
     }
     addNotification({
       id: createId('ntf'), merchantId: db.merchant.id, type: 'ops',
-      title: 'Stock-in confirmed (DEMO)',
+      title: 'Stock-in confirmed (simulated)',
       body: `${order.lines.length} supplier lines received. Catalog ranges updated.`,
       read: false, createdAt: order.confirmedAt, relatedEntityId: order.id,
       relatedRoute: '/dukaan/manage', priority: 'normal',
@@ -545,13 +547,13 @@ async function routeDemoApi(req: IncomingMessage, res: ServerResponse) {
     // Below one rupee the amount rounds to zero paise, which would put a ₹0.00
     // row in the ledger. Reject it instead of recording a payment of nothing.
     if (amountRupees < MIN_AMOUNT_RUPEES) {
-      return fail(res, 400, 'amount_too_small', `The smallest payment this demo records is ₹${MIN_AMOUNT_RUPEES}.`)
+      return fail(res, 400, 'amount_too_small', `The smallest payment is ₹${MIN_AMOUNT_RUPEES}.`)
     }
     if (Math.round(amountRupees * 100) !== Number((amountRupees * 100).toFixed(4))) {
       return fail(res, 400, 'invalid_amount', 'An amount can have at most two decimal places.')
     }
     if (amountRupees > MAX_AMOUNT_RUPEES) {
-      return fail(res, 400, 'amount_too_large', `This demo collects at most ₹${MAX_AMOUNT_RUPEES.toLocaleString('en-IN')} in one payment.`)
+      return fail(res, 400, 'amount_too_large', `You can collect at most ₹${MAX_AMOUNT_RUPEES.toLocaleString('en-IN')} in one payment.`)
     }
     // Guard the rest of the pipeline against a string or a 1e308 slipping through.
     input.amountRupees = amountRupees
@@ -602,7 +604,7 @@ async function routeDemoApi(req: IncomingMessage, res: ServerResponse) {
     const id = path.split('/')[3]
     const transaction = db.transactions.find((t) => t.id === id)
     if (!transaction || transaction.status !== 'success') return json(res, 400, { error: 'Only a successful payment can be refunded' })
-    if (transaction.settlementId) return json(res, 400, { error: 'Already settled. Refund from bank settlement is not enabled in demo.' })
+    if (transaction.settlementId) return json(res, 400, { error: 'Already settled. Refunding a settled payment is not supported in this prototype.' })
     transaction.status = 'refunded'
     addNotification({
       id: createId('ntf'), merchantId: db.merchant.id, type: 'ops',
@@ -651,7 +653,7 @@ async function routeDemoApi(req: IncomingMessage, res: ServerResponse) {
     res.setHeader('Allow', allowed.join(', '))
     return fail(res, 405, 'method_not_allowed', `${req.method ?? 'This method'} is not supported here. Use ${allowed.join(' or ')}.`)
   }
-  return fail(res, 404, 'route_not_found', `No demo API route matches ${path.slice(0, 120)}.`)
+  return fail(res, 404, 'route_not_found', `No API route matches ${path.slice(0, 120)}.`)
 }
 
 /** Known paths and their verbs, used only to turn a wrong verb into a 405. */
@@ -697,7 +699,7 @@ export async function handleDemoApi(req: IncomingMessage, res: ServerResponse) {
     } else {
       // Log for the Vercel function log; the client gets a stable, honest shape.
       console.error('[demo-api]', req.method, path, error)
-      fail(res, 500, 'server_error', 'The demo server hit an unexpected error. Nothing was saved for this request.')
+      fail(res, 500, 'server_error', 'The server hit an unexpected error. Nothing was saved for this request.')
     }
   }
   try {
@@ -714,7 +716,7 @@ function mountDemoApi(middlewares: { use: (path: string, handler: (req: Incoming
     void handleDemoApi(req, res).catch((error: unknown) => {
       console.error('[demo-api-plugin]', error)
       json(res, 500, {
-        error: 'The demo API failed to handle this request.',
+        error: 'The server failed to handle this request.',
         code: 'handler_crash',
         status: 500,
       })

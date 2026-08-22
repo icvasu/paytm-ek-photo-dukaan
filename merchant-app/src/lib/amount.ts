@@ -24,9 +24,9 @@ export function parseAmountRupees(raw: string): AmountParse {
   const value = Number(trimmed)
   if (!Number.isFinite(value)) return { valid: false, rupees: 0, error: 'Enter a valid amount.' }
   if (value <= 0) return { valid: false, rupees: 0, error: 'Enter an amount above ₹0.' }
-  if (value < 1) return { valid: false, rupees: 0, error: 'The smallest demo payment is ₹1.' }
+  if (value < 1) return { valid: false, rupees: 0, error: 'The smallest payment is ₹1.' }
   if (value > MAX_COLLECT_RUPEES) {
-    return { valid: false, rupees: 0, error: `The demo limit is ₹${MAX_COLLECT_RUPEES.toLocaleString('en-IN')}.` }
+    return { valid: false, rupees: 0, error: `The most you can collect in one payment is ₹${MAX_COLLECT_RUPEES.toLocaleString('en-IN')}.` }
   }
   return { valid: true, rupees: Math.round(value * 100) / 100, error: '' }
 }

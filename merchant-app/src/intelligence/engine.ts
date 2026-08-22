@@ -1,4 +1,7 @@
-import { dailySalesSeries, deriveDashboard, hourlyActivity, returningShare, successRateByHour } from '../domain/metrics.js'
+import {
+  dailySalesSeries, deriveDashboard, hourLabel, hourlyActivity, peakWindow, returningShare,
+  successRateByHour, topRepeatCustomers, weakestWeekday,
+} from '../domain/metrics.js'
 import { formatINR } from '../lib/money.js'
 import { weekdayName, parseISO } from '../lib/dates.js'
 import { estimateDemand, type DemandEstimate, type DemandReport } from './demand.js'
@@ -70,6 +73,11 @@ export function buildInsights(data: MerchantStoreData): BusinessInsight[] {
   const restFail =
     rest.reduce((s, r) => s + r.failed, 0) / Math.max(1, rest.reduce((s, r) => s + r.failed + r.success, 0))
   const customers = returningShare(data)
+  // Named from the ledger, never asserted: an insight that hardcodes a weekday
+  // or a customer is a sentence pretending to be a finding.
+  const weakest = weakestWeekday(data)
+  const regulars = topRepeatCustomers(data, 2)
+  const window = peakWindow(data)
   const weekday = weekdayName(now)
   const sameWeekday = series.filter((d) => weekdayName(parseISO(d.date)) === weekday)
   const typical = sameWeekday.slice(0, -1)
@@ -112,7 +120,7 @@ export function buildInsights(data: MerchantStoreData): BusinessInsight[] {
       title: up ? 'Sales are up versus last week' : 'Sales are softer than last week',
       description: up
         ? `Collections over the last 7 days are ${Math.abs(dash.weekDeltaPct).toFixed(0)}% higher than the previous 7 days. Keep stock ready for evening rush.`
-        : `Collections over the last 7 days are ${Math.abs(dash.weekDeltaPct).toFixed(0)}% lower than the previous 7 days. Tuesdays are typically the weakest days for this store.`,
+        : `Collections over the last 7 days are ${Math.abs(dash.weekDeltaPct).toFixed(0)}% lower than the previous 7 days.${weakest ? ` ${weakest.weekday} is the weakest day in your last four weeks, averaging ${formatINR(Math.round(weakest.avgPaise / 100) * 100)}.` : ''}`,
       priority: up ? 'normal' : 'high',
       metricLabel: '7-day change',
       metricValue: `${dash.weekDeltaPct >= 0 ? '+' : ''}${dash.weekDeltaPct.toFixed(0)}%`,
@@ -133,7 +141,7 @@ export function buildInsights(data: MerchantStoreData): BusinessInsight[] {
       description:
         ratio < 0.75
           ? `By this point a typical ${weekday} has been closer to ${formatINR(Math.round(typicalAvg))}. Today's successful collections are ${formatINR(todayPoint.paise)}.`
-          : `A typical ${weekday} for Meena Kirana is around ${formatINR(Math.round(typicalAvg))}. Today so far: ${formatINR(todayPoint.paise)}.`,
+          : `A typical ${weekday} for ${data.merchant.businessName} is around ${formatINR(Math.round(typicalAvg))}. Today so far: ${formatINR(todayPoint.paise)}.`,
       priority: ratio < 0.75 ? 'high' : 'low',
       metricLabel: 'Today vs usual',
       metricValue: `${Math.round(ratio * 100)}%`,
@@ -148,8 +156,9 @@ export function buildInsights(data: MerchantStoreData): BusinessInsight[] {
       merchantId: data.merchant.id,
       kind: 'peak_hours',
       title: `Customers are most active around ${label}`,
-      description:
-        'Morning grocery runs and the 6–9 pm neighbourhood rush drive most successful payments. Staffing the counter then reduces missed sales.',
+      description: window
+        ? `${window.sharePct.toFixed(0)}% of your successful payments land between ${hourLabel(window.startHour)} and ${hourLabel(window.endHour)}. Staffing the counter through that window reduces missed sales.`
+        : `${peak.count} successful payments cluster at this hour. Staffing the counter then reduces missed sales.`,
       priority: 'normal',
       metricLabel: 'Peak hour',
       metricValue: label,
@@ -180,7 +189,7 @@ export function buildInsights(data: MerchantStoreData): BusinessInsight[] {
     merchantId: data.merchant.id,
     kind: 'customers',
     title: 'Regulars still drive most collections',
-    description: `${customers.returningPct.toFixed(0)}% of successful tagged payments come from customers who have paid more than once. Fatima Shaikh (daily staples) and Ramesh Iyer (Saturday stock-up) are the clearest examples.`,
+    description: `${customers.returningPct.toFixed(0)}% of successful tagged payments come from customers who have paid more than once.${regulars.length ? ` Your biggest are ${regulars.map((entry) => `${entry.name} (${entry.successCount} payments, ${formatINR(entry.totalSpendPaise)})`).join(' and ')}.` : ''}`,
     priority: 'normal',
     metricLabel: 'Repeat share',
     metricValue: `${customers.returningPct.toFixed(0)}%`,

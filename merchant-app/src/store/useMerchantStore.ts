@@ -76,7 +76,7 @@ export const useMerchantStore = create<MerchantStore>()(
           const apiState = await fetchApiState()
           set({ ...apiState, bootStatus: 'idle' })
         } catch (error) {
-          set({ bootStatus: 'error', actionError: error instanceof Error ? error.message : 'Could not load demo data' })
+          set({ bootStatus: 'error', actionError: error instanceof Error ? error.message : 'Could not load your shop data' })
         }
       },
 
@@ -88,7 +88,7 @@ export const useMerchantStore = create<MerchantStore>()(
           const fresh = buildSeed()
           set({ ...fresh, ...apiState, bootStatus: 'idle', actionError: null })
         } catch (error) {
-          const message = error instanceof Error ? error.message : 'Could not reset demo'
+          const message = error instanceof Error ? error.message : 'Could not reset to sample data'
           set({ bootStatus: 'error', actionError: message })
           throw new Error(message)
         }
@@ -183,7 +183,7 @@ export const useMerchantStore = create<MerchantStore>()(
           throw new Error(err)
         }
         if (txn.settlementId) {
-          const err = 'Already settled. Refund from bank settlement is not enabled in demo.'
+          const err = 'Already settled. Refunding a settled payment is not supported in this prototype.'
           set({ actionError: err })
           throw new Error(err)
         }

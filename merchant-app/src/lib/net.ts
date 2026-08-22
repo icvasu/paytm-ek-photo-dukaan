@@ -26,7 +26,7 @@ function isKnownOffline(): boolean {
 function offlineMessage() {
   return isKnownOffline()
     ? 'You are offline. Reconnect and try again.'
-    : 'Could not reach the demo server. Check the network and try again.'
+    : 'Could not reach the server. Check the network and try again.'
 }
 
 /**
@@ -49,8 +49,8 @@ export async function apiJson<T>(path: string, init?: RequestInit & { timeoutMs?
       } catch {
         throw new ApiError(
           response.ok
-            ? 'The demo server sent a response the app could not read.'
-            : `The demo server returned ${response.status}.`,
+            ? 'The server sent a response the app could not read.'
+            : `The server returned ${response.status}.`,
           response.status,
           false,
         )
@@ -63,7 +63,7 @@ export async function apiJson<T>(path: string, init?: RequestInit & { timeoutMs?
   } catch (reason) {
     if (reason instanceof ApiError) throw reason
     if (reason instanceof DOMException && reason.name === 'AbortError') {
-      throw new ApiError(`The demo server did not answer within ${Math.round(timeoutMs / 1000)}s. Try again.`, 0, true)
+      throw new ApiError(`The server did not answer within ${Math.round(timeoutMs / 1000)}s. Try again.`, 0, true)
     }
     throw new ApiError(offlineMessage(), 0, true)
   } finally {

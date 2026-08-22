@@ -68,7 +68,7 @@ export class DemoPaytmService implements PaytmService {
         ok: false,
         status: 'failed',
         providerRef: createId('ref'),
-        failureReason: 'Amount exceeds the demo collection limit',
+        failureReason: 'Amount exceeds the collection limit',
         processedAt: new Date().toISOString(),
       }
     }

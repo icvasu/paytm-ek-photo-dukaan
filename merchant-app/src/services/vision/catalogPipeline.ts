@@ -3,6 +3,9 @@ import { runOcr, OcrUnavailableError, type OcrOutcome, type OcrPhase } from './o
 import { parseCatalogLines, type ParseOutcome, type RejectedLine } from './parseCatalog.js'
 import { resolveItems, type ResolvedItem } from './resolveItems.js'
 import {
+  cachedVisionRead, hashBlob, rememberVisionRead, withRecallNote,
+} from './photoCache.js'
+import {
   findSamplePhoto, findSampleShop, loadSampleCatalog, loadSampleInvoice, sampleShopForCatalog,
 } from './VisionService.js'
 
@@ -95,6 +98,16 @@ export async function analyzePhoto(
    */
   sourceLabel = 'your photo',
 ): Promise<VisionResult & { sourceImageName: string }> {
+  // Keyed on the bytes, so the same image always yields the same rows and a
+  // second tap does not re-run seconds of WASM. See photoCache.ts.
+  const hash = await hashBlob(file)
+  const recalled = cachedVisionRead(hash)
+  if (recalled) {
+    lastEvidence = recalled.evidence ? { sourceImageName: fileName, evidence: recalled.evidence } : null
+    onPhase?.({ progress: 1, label: 'Recalled from this photo’s earlier read' })
+    return withRecallNote({ ...recalled.result, sourceImageName: fileName })
+  }
+
   const outcome = await runOcr(file, onPhase)
   const parse = parseCatalogLines(outcome.lines)
 
@@ -129,7 +142,7 @@ export async function analyzePhoto(
 
   const meanConfidence = resolved.reduce((sum, item) => sum + item.confidencePct, 0) / resolved.length
 
-  return {
+  const result: VisionResult & { sourceImageName: string } = {
     items: resolved.map(toCatalogItem),
     // Confidence describes the read, so it must come from the read.
     confidence: meanConfidence >= 70 ? 'high' : meanConfidence >= 50 ? 'medium' : 'starter',
@@ -146,6 +159,9 @@ export async function analyzePhoto(
       durationMs: outcome.durationMs,
     },
   }
+
+  rememberVisionRead(hash, { result, evidence: lastEvidence?.evidence ?? null })
+  return result
 }
 
 /** Loads one of the pre-written sample shops. Labelled as a fixture, not a read. */

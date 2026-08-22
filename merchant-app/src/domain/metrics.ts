@@ -133,3 +133,90 @@ export function averageTicket(data: MerchantStoreData) {
 export function weekdayLabel(data: MerchantStoreData) {
   return weekdayName(parseISO(data.demoClock))
 }
+
+/**
+ * Mean successful collections per weekday over the recent window.
+ *
+ * Exists so an insight can name the shop's weakest day from the ledger instead
+ * of asserting one. Today is excluded: it is still in progress, so counting it
+ * would drag its own weekday down every single time.
+ */
+export function weekdayPerformance(data: MerchantStoreData, days = 28) {
+  const now = parseISO(data.demoClock)
+  const series = dailySalesSeries(data, days).filter((day) => !isSameDay(parseISO(day.date), now))
+  const buckets = new Map<string, { weekday: string; totalPaise: number; days: number }>()
+  for (const day of series) {
+    const weekday = weekdayName(parseISO(day.date))
+    const bucket = buckets.get(weekday) ?? { weekday, totalPaise: 0, days: 0 }
+    bucket.totalPaise += day.paise
+    bucket.days += 1
+    buckets.set(weekday, bucket)
+  }
+  return [...buckets.values()]
+    .map((bucket) => ({ ...bucket, avgPaise: Math.round(bucket.totalPaise / bucket.days) }))
+    .sort((a, b) => a.avgPaise - b.avgPaise)
+}
+
+/**
+ * The weakest weekday by average collections, or null when there is not enough
+ * history to make the comparison meaningful.
+ */
+export function weakestWeekday(data: MerchantStoreData, days = 28) {
+  const ranked = weekdayPerformance(data, days)
+  // Needs at least two weekdays with a full week each, otherwise "weakest" is
+  // an artefact of the window rather than a pattern.
+  if (ranked.length < 3 || ranked.every((entry) => entry.days < 2)) return null
+  const weakest = ranked[0]
+  const busiest = ranked[ranked.length - 1]
+  if (!busiest.avgPaise || weakest.avgPaise >= busiest.avgPaise) return null
+  return weakest
+}
+
+/**
+ * Customers with more than one successful payment, ranked by what they actually
+ * spent. Used to name regulars from the ledger rather than from a constant.
+ */
+export function topRepeatCustomers(data: MerchantStoreData, limit = 2) {
+  const byCustomer = new Map<string, { customerId: string; name: string; successCount: number; totalSpendPaise: number }>()
+  for (const txn of successfulSales(data.transactions)) {
+    if (!txn.customerId) continue
+    const entry = byCustomer.get(txn.customerId)
+      ?? { customerId: txn.customerId, name: txn.customerName, successCount: 0, totalSpendPaise: 0 }
+    entry.successCount += 1
+    entry.totalSpendPaise += txn.amountPaise
+    byCustomer.set(txn.customerId, entry)
+  }
+  return [...byCustomer.values()]
+    .filter((entry) => entry.successCount >= 2)
+    .sort((a, b) => b.totalSpendPaise - a.totalSpendPaise)
+    .slice(0, limit)
+}
+
+/**
+ * The busiest contiguous three-hour window of successful payments, and the
+ * share of the day's payments inside it.
+ */
+export function peakWindow(data: MerchantStoreData) {
+  const hours = hourlyActivity(data)
+  const total = hours.reduce((sum, bucket) => sum + bucket.count, 0)
+  if (!total) return null
+  let bestStart = 0
+  let bestCount = -1
+  for (let start = 0; start <= 21; start += 1) {
+    const count = hours[start].count + hours[start + 1].count + hours[start + 2].count
+    if (count > bestCount) { bestCount = count; bestStart = start }
+  }
+  return {
+    startHour: bestStart,
+    endHour: bestStart + 3,
+    count: bestCount,
+    sharePct: (bestCount / total) * 100,
+  }
+}
+
+/** "6 pm" style label for an hour of the day. */
+export function hourLabel(hour: number): string {
+  if (hour === 0 || hour === 24) return '12 am'
+  if (hour === 12) return '12 pm'
+  return hour < 12 ? `${hour} am` : `${hour - 12} pm`
+}

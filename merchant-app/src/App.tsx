@@ -1156,7 +1156,11 @@ function DukaanManagePage() {
         <Package aria-hidden="true" />
         <div>
           <b className="num">{needsAttention.length} items need attention</b>
-          <p>{needsAttention.length ? needsAttention.map((item) => item.name).slice(0, 3).join(', ') : 'Nothing is flagged low right now.'}</p>
+          {/* The shopkeeper reads this line, not the English fine print under
+              it, so the call to action is in the Hinglish she speaks. */}
+          <p>{needsAttention.length
+            ? `${needsAttention.map((item) => item.name).slice(0, 3).join(', ')} — jaldi khatam ho sakta hai. Supplier ko order bhej dein.`
+            : 'Nothing is flagged low right now. Sab theek hai.'}</p>
           <small>Estimated from shelf cues in your photo plus confirmed payment baskets — not an exact stock count.</small>
         </div>
       </section>
@@ -1180,7 +1184,9 @@ function DukaanManagePage() {
             <Truck aria-hidden="true" />
             <div>
               <b>{data.supplier.name}</b>
-              <p className="num">{data.supplier.lines.length} bill lines · usual order {formatINR(data.supplier.normalOrderPaise)}</p>
+              {/* "Bill total", not "usual order": this is the one bill that was
+                  read, not an average over a supplier history we do not have. */}
+              <p className="num">{data.supplier.lines.length} bill lines · bill total {formatINR(data.supplier.normalOrderPaise)}</p>
             </div>
           </div>
           <p className="supplier-disclosure">{data.supplier.disclosure}</p>
