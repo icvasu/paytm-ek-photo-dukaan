@@ -264,18 +264,6 @@ function HomePage() {
         <h1>Today’s business</h1>
       </div>
 
-      <button className="dukaan-shortcut" onClick={() => navigate(hasCatalog ? '/dukaan/manage' : '/dukaan/scan')}>
-        <span aria-hidden="true"><Camera /></span>
-        <div>
-          <small>Ek Photo Dukaan</small>
-          <strong>{hasCatalog ? 'Your digital dukaan is live' : 'Turn one photo into your catalog'}</strong>
-          <p>{hasCatalog
-            ? `${data.catalog!.items.length} items · manage prices, QR and sharing`
-            : 'Photo lo, dukaan banao — catalog, QR and share text in one go'}</p>
-        </div>
-        <ChevronRight aria-hidden="true" />
-      </button>
-
       <section className="sales-card" aria-label="Today’s sales">
         <div className="eyebrow">Today’s sales</div>
         <div className="hero-amount num">{formatINR(dash.salesToday)}</div>
@@ -304,6 +292,21 @@ function HomePage() {
           <span>To {data.merchant.bankName} ••{data.merchant.bankAccountLast4}</span>
         </div>
         <div className="round-arrow" aria-hidden="true"><ArrowRight /></div>
+      </button>
+
+      {/* Ek Photo Dukaan is a feature of this app, so it sits below today's
+          collections and the counter actions rather than above them. */}
+      <SectionTitle>More for your business</SectionTitle>
+      <button className="dukaan-shortcut" onClick={() => navigate(hasCatalog ? '/dukaan/manage' : '/dukaan/scan')}>
+        <span aria-hidden="true"><Camera /></span>
+        <div>
+          <small>Ek Photo Dukaan</small>
+          <strong>{hasCatalog ? 'Your digital dukaan is live' : 'Turn one photo into your catalog'}</strong>
+          <p>{hasCatalog
+            ? `${data.catalog!.items.length} items · manage prices, QR and sharing`
+            : 'Photo lo, dukaan banao — catalog, QR and share text in one go'}</p>
+        </div>
+        <ChevronRight aria-hidden="true" />
       </button>
 
       {insight && <button className="insight-teaser" onClick={() => navigate('/insights')}>
@@ -1037,7 +1040,7 @@ function DukaanManagePage() {
 
   return <>
     <PageHeader title="Ek Photo Dukaan" back action={
-      <button className="header-link" onClick={() => navigate(`/dukaan/${catalog.slug}`)}>Preview</button>
+      <button className="header-link" onClick={() => navigate(`/dukaan/${catalog.slug}`, { state: previewState })}>Preview</button>
     } />
     <Page>
       <section className="catalog-summary">
@@ -1123,7 +1126,7 @@ function DukaanManagePage() {
             <MessageCircle aria-hidden="true" />WhatsApp
           </button>
         </div>
-        <button className="secondary full" style={{ marginTop: 'var(--space-2)' }} onClick={() => { setSharing(false); navigate(`/dukaan/${catalog.slug}`) }}>
+        <button className="secondary full" style={{ marginTop: 'var(--space-2)' }} onClick={() => { setSharing(false); navigate(`/dukaan/${catalog.slug}`, { state: previewState }) }}>
           <Eye aria-hidden="true" />Preview as a customer
         </button>
       </Sheet>}
@@ -1206,8 +1209,19 @@ function DukaanManagePage() {
 /* Public storefront                                                          */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Marks a storefront visit as the merchant previewing their own dukaan.
+ *
+ * The customer page carries no merchant navigation by design, which would leave
+ * a previewing merchant stranded. A real customer arrives from a QR or link
+ * without this state and so never sees a way into the merchant app.
+ */
+const previewState = { fromMerchant: true }
+
 function PublicDukaanPage() {
   const { slug } = useParams()
+  const location = useLocation()
+  const fromMerchant = Boolean((location.state as { fromMerchant?: boolean } | null)?.fromMerchant)
   const data = useData()
   const [catalog, setCatalog] = useState<DukaanCatalog | null>(() => {
     if (data.catalog?.slug === slug) return data.catalog
@@ -1264,7 +1278,7 @@ function PublicDukaanPage() {
   const intent = useMemo(() => shopIntent(data.merchant.businessName), [data.merchant.businessName])
 
   if (catalogStatus === 'loading' && !catalog) return <>
-    <PageHeader title="Loading" />
+    <PageHeader title="Loading" back={fromMerchant} />
     <Page className="public-dukaan">
       <h1 className="sr-only">Loading the shop</h1>
       <div className="storefront-skeleton" aria-hidden="true">
@@ -1276,7 +1290,7 @@ function PublicDukaanPage() {
   </>
 
   if (!catalog || catalog.slug !== slug || catalogStatus === 'error') return <>
-    <PageHeader title="Shop unavailable" />
+    <PageHeader title="Shop unavailable" back={fromMerchant} />
     <Page className="public-dukaan">
       <h1 className="sr-only">Shop unavailable</h1>
       <EmptyState icon={<Store />} title="This shop isn’t available"
@@ -1292,7 +1306,7 @@ function PublicDukaanPage() {
     && (!query || item.name.toLowerCase().includes(query.toLowerCase())))
 
   return <>
-    <PageHeader title={shopName} />
+    <PageHeader title={shopName} back={fromMerchant} />
     <Page className="public-dukaan">
       <section className="public-hero">
         <span aria-hidden="true"><Store /></span>
@@ -1384,6 +1398,9 @@ function BusinessPage() {
         <MenuItem icon={<Users />} title="Customers" text="Customer history and repeat spend" to="/customers" />
         <MenuItem icon={<Banknote />} title="Settlements" text={`${formatINR(dash.availablePaise)} available`} to="/settlements" />
         <MenuItem icon={<Lightbulb />} title="Business insights" text="Trends, peak hours and opportunities" to="/insights" />
+        <MenuItem icon={<Camera />} title="Ek Photo Dukaan"
+          text={data.catalog ? `${data.catalog.items.length} items in your digital dukaan` : 'Turn one photo into a price list'}
+          to={data.catalog ? '/dukaan/manage' : '/dukaan/scan'} />
       </section>
       <div className="info-banner">
         <Sparkles aria-hidden="true" />
@@ -1824,10 +1841,7 @@ function AppShell() {
     // A customer (or judge) opening the public QR must never wait on — or die
     // from — the merchant hydrate. The storefront has its own catalog fetch
     // and a client-side seed fallback.
-    if (isPublicShop) {
-      setFirstSyncDone(true)
-      return
-    }
+    if (isPublicShop) return
     void syncFromApi().finally(() => setFirstSyncDone(true))
   }, [syncFromApi, isPublicShop])
 
