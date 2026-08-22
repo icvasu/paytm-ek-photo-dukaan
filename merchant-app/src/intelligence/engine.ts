@@ -28,6 +28,28 @@ export function buildInsights(data: MerchantStoreData): BusinessInsight[] {
 
   const insights: BusinessInsight[] = []
 
+  if (data.catalog) {
+    const unavailable = data.catalog.items.filter((item) => !item.available || item.stockFlag === 'out')
+    const low = data.catalog.items.filter((item) => item.available && item.stockFlag === 'low')
+    const popularPricePoints = new Set(
+      data.transactions
+        .filter((transaction) => transaction.status === 'success')
+        .map((transaction) => transaction.amountPaise),
+    )
+    const matchingItems = data.catalog.items.filter((item) => popularPricePoints.has(item.pricePaise))
+    insights.push({
+      id: 'insight_catalog_restock',
+      merchantId: data.merchant.id,
+      kind: 'catalog',
+      title: unavailable.length ? `${unavailable[0].name} needs attention` : `${low.length} catalog items may run low`,
+      description: `${unavailable.length} unavailable and ${low.length} low-stock items from the photo. ${matchingItems.length} item prices also appear directly in successful payment amounts, so keep those lines visible.`,
+      priority: unavailable.length ? 'high' : 'normal',
+      metricLabel: 'Dukaan stock hints',
+      metricValue: `${unavailable.length + low.length} items`,
+      createdAt: data.demoClock,
+    })
+  }
+
   if (prev7) {
     const up = last7 >= prev7
     insights.push({

@@ -1,6 +1,6 @@
-# Merchant Business Demo
+# Ek Photo Dukaan merchant demo
 
-An unofficial Paytm-for-Business-style merchant web app built for the “AI for Small Businesses” hackathon theme. This is a local prototype, is not affiliated with or endorsed by Paytm, and does not use real Paytm APIs or credentials.
+An unofficial hackathon prototype for **one photo → digital dukaan** inside a Paytm-for-Business-style shell. A printed rate-card photo becomes an editable catalog, shareable customer price list/QR and heuristic restock hint. Merchant payments are the base signal and host experience, not the pitch. This project is not affiliated with or endorsed by Paytm and uses no real Paytm APIs or credentials.
 
 **Teammate docs (Ek Photo Dukaan V0):** [docs/V0.md](docs/V0.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/DEMO.md](docs/DEMO.md) · [docs/TEAM.md](docs/TEAM.md). Repo clone and branches: root [CONTRIBUTING.md](../CONTRIBUTING.md).
 
@@ -15,18 +15,15 @@ Open the Vite URL (normally `http://localhost:5173`). The single Vite process st
 
 ## Demo flow
 
-1. Open Home and review today’s sales, transaction counts, settlement balance, and insight.
-2. Tap **Collect**, enter an amount and select a customer.
-3. Submit and watch processing become success; the Soundbox banner appears when enabled.
-4. Return Home to see sales and recent payments update.
-5. Collect ₹13 (or use “fail” in the note) to demonstrate a failed payment.
-6. Open a successful unsettled payment and refund it.
-7. Open **My QR**, set an amount, and simulate a customer scan-and-pay.
-8. Open **Business → Customers** to see spend derived from linked transactions.
-9. Open **Settlements** and settle the available balance; linked transactions update.
-10. Review the charts and rule-based recommendations under **Smart insights**.
-11. Read notifications and verify the unread badge changes.
-12. Use **Profile → Reset demo data** to restore the original scenario.
+1. On Home, tap **Ek Photo Dukaan**.
+2. Use the bundled printed tea-counter rate card or upload an image.
+3. Read the demo-vision disclosure; the current adapter is seeded and does not inspect pixels.
+4. Review and edit the generated catalog.
+5. Show the heuristic restock hint, share QR/link and WhatsApp-ready customer message.
+6. Preview the read-only customer price list.
+7. Use **Profile → Reset demo data** to clear the catalog and restore the seeded scenario.
+
+Payments, collection, My QR, settlements and insights remain available to establish the existing merchant shell and seeded Paytm-like amount stream.
 
 ## UI routes
 
@@ -37,6 +34,7 @@ Open the Vite URL (normally `http://localhost:5173`). The single Vite process st
 - `/#/customers`, `/#/customers/:id`
 - `/#/settlements`, `/#/insights`
 - `/#/notifications`, `/#/search`, `/#/profile`
+- `/#/dukaan/scan`, `/#/dukaan/manage`, `/#/dukaan/:slug`
 
 ## Demo REST API
 
@@ -72,6 +70,8 @@ Replace `IntelligenceEngine.generate()` with an authenticated server-side model 
 ## Limitations
 
 - All payments, QR scans, refunds, settlement references, and notifications are simulations.
+- Photo interpretation is deterministic filename/size mapping, not production OCR or a real vision model.
+- Restock output is a labelled heuristic; supplier invoice capture, basket decomposition, stockout confidence and supplier reorder are not implemented.
 - The API is available through `npm run dev`; a static production build needs a separately hosted backend.
 - UI persistence and API memory are separate demo projections; reset synchronizes both.
 - There is no authentication, multi-merchant tenancy, bank connectivity, real-time webhook handling, or production security hardening.

@@ -46,7 +46,7 @@ domain/metrics.ts              ──► dashboard numbers (do not duplicate in 
 
 1. **Input** — one image (camera or file). Prefer printed shelf / rate card. Seeded filenames trigger high-confidence lists (see Vision).
 2. **VisionService.analyze** — returns `VisionResult`. No payment side effects.
-3. **Merchant review** — edits stay in UI until publish, then `createCatalog` → `POST /api/catalog`.
+3. **Catalog creation** — the vision result is saved through `createCatalog` → `POST /api/catalog`, then the merchant reviews and edits API-authoritative fields.
 4. **Catalog** — `DukaanCatalog` (`src/types/models.ts`): slug `meena-kirana`, items with `pricePaise`, `stockFlag` (`in_stock` | `low` | `out`), `stockLabel` as a **range string**.
 5. **Customer list** — hash route `/#/dukaan/:slug` should render the same items (read-only). Payload also at `GET /api/dukaan/:slug`.
 6. **QR / share** — reuse `qrcode.react` (already used on My QR). Share text is a WhatsApp `wa.me` draft, not Cloud API send.
@@ -59,14 +59,14 @@ domain/metrics.ts              ──► dashboard numbers (do not duplicate in 
 | Concern | File | Contract |
 | --- | --- | --- |
 | Vision adapter | `src/services/vision/VisionService.ts` | `analyze({ fileName, fileSize, imageType })` |
-| DI / payments / insights | `src/services/container.ts` | Export `paytmService`, `intelligenceEngine`. Wire a vision singleton here when the UI lands (`demoVisionService`). |
+| DI / payments / insights | `src/services/container.ts` | Exports `paytmService` and `intelligenceEngine`; demo vision is imported directly by the capture route. |
 | Catalog + payments UI state | `src/store/useMerchantStore.ts` | `createCatalog`, `updateCatalogItem`, `addCatalogItem`, `removeCatalogItem`, `syncFromApi`, `resetDemo` |
 | HTTP demo backend | `server/demoApi.ts` | Vite middleware; catalog + dukaan GET/POST |
 | Seeded merchant | `src/data/seed.ts` | Meena Kirana, `catalog: null` |
 | Insights | `src/intelligence/engine.ts` | `buildInsights` (API) / `ruleBasedIntelligence.generate` (client) |
 | Metrics | `src/domain/metrics.ts` | Sales, tickets, hours — keep as SSoT |
 | Paytm adapter | `src/services/paytm/PaytmService.ts` | Mock processor; `ApiPaytmService` calls REST |
-| Shell | `src/App.tsx` | Existing routes; **add** capture, editor, `/dukaan/:slug` — do not fork a second app |
+| Shell | `src/App.tsx` | Existing merchant routes plus capture, editor and customer price-list routes in the same app |
 
 ### Catalog REST (demo)
 
@@ -116,17 +116,17 @@ If you swapped Paytm for another PSP, both the **sensor** (amounts) and the **re
 
 ---
 
-## UI routes to add (if missing)
+## UI routes
 
 Existing: `/#/`, `/#/payments`, `/#/collect`, `/#/qr`, `/#/business`, `/#/customers`, `/#/settlements`, `/#/insights`, `/#/notifications`, `/#/search`, `/#/profile`.
 
-Proposed (do not collide with My QR):
+Implemented (separate from the merchant's payment QR route):
 
-- `/#/dukaan` — capture + empty state
-- `/#/dukaan/edit` — merchant editor after vision
-- `/#/dukaan/:slug` — customer price list (slug `meena-kirana`)
+- `/#/dukaan/scan` — sample or image upload and demo-vision disclosure
+- `/#/dukaan/manage` — editable merchant catalog, restock hint, share QR/link
+- `/#/dukaan/:slug` — read-only customer price list (slug `meena-kirana`)
 
-Home should have a single **Ek Photo Dukaan** shortcut. Profile **Reset demo data** already exists — catalog must clear with it.
+Home has one **Ek Photo Dukaan** shortcut. Profile **Reset demo data** clears the catalog with the rest of the seeded state.
 
 ---
 

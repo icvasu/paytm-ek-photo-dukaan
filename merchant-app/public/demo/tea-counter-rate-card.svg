@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="850" viewBox="0 0 700 850">
+  <rect width="700" height="850" fill="#fff8dc"/>
+  <rect x="35" y="35" width="630" height="780" rx="18" fill="#173f35" stroke="#9b6b3e" stroke-width="18"/>
+  <g font-family="Arial" fill="#fff" text-anchor="middle">
+    <text x="350" y="110" font-size="42" font-weight="700">RAMESH TEA &amp; SNACKS</text>
+    <text x="350" y="155" font-size="25" fill="#facc15">0G >0M! " DEMO</text>
+  </g>
+  <g font-family="Arial" font-size="31" fill="#fff">
+    <text x="100" y="240">Masala Chai</text><text x="560" y="240">¹10</text>
+    <text x="100" y="320">Samosa</text><text x="560" y="320">¹15</text>
+    <text x="100" y="400">Water Bottle 1 L</text><text x="560" y="400">¹20</text>
+    <text x="100" y="480">Thums Up 750 ml</text><text x="560" y="480">¹45</text>
+    <text x="100" y="560">Limca 750 ml</text><text x="560" y="560">¹45</text>
+    <text x="100" y="640">Parle-G Biscuit</text><text x="560" y="640">¹10</text>
+  </g>
+  <path d="M85 690h530" stroke="#facc15" stroke-width="3"/>
+  <text x="350" y="750" font-family="Arial" text-anchor="middle" font-size="22" fill="#d1fae5">Seeded printed sample " No production OCR</text>
+</svg>

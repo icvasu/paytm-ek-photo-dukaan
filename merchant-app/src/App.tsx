@@ -3,21 +3,24 @@ import {
   HashRouter, NavLink, Route, Routes, useLocation, useNavigate, useParams,
 } from 'react-router-dom'
 import {
-  ArrowLeft, ArrowRight, Banknote, Bell, BellRing, Building2, Check,
-  ChevronRight, CircleAlert, Clock3, Home, IndianRupee, Lightbulb,
-  QrCode, RefreshCw, Search, Settings, Sparkles, Store, Users, WalletCards, X,
+  ArrowLeft, ArrowRight, Banknote, Bell, BellRing, Building2, Camera, Check,
+  ChevronRight, CircleAlert, Clock3, Copy, Eye, Home, Image, IndianRupee, Lightbulb,
+  MessageCircle, Package, Plus, QrCode, RefreshCw, Search, Settings, Sparkles,
+  Store, Trash2, Upload, Users, WalletCards, X,
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis,
 } from 'recharts'
 import './App.css'
+import './Dukaan.css'
 import { useMerchantStore } from './store/useMerchantStore'
 import { averageTicket, customerStats, dailySalesSeries, deriveDashboard, hourlyActivity, returningShare } from './domain/metrics'
 import { intelligenceEngine, paytmService } from './services/container'
 import { formatINR } from './lib/money'
 import { formatDayLabel, formatTime } from './lib/dates'
 import type { PaymentMethod, Transaction } from './types/models'
+import { demoVisionService } from './services/vision/VisionService'
 
 const methodName: Record<PaymentMethod, string> = {
   upi: 'UPI', paytm_wallet: 'Paytm Wallet', card: 'Card', netbanking: 'Net banking',
@@ -31,7 +34,8 @@ function useData() {
   const notifications = useMerchantStore((s) => s.notifications)
   const preferences = useMerchantStore((s) => s.preferences)
   const demoClock = useMerchantStore((s) => s.demoClock)
-  return { merchant, customers, transactions, settlements, notifications, preferences, demoClock }
+  const catalog = useMerchantStore((s) => s.catalog)
+  return { merchant, customers, transactions, settlements, notifications, preferences, demoClock, catalog }
 }
 
 function PageHeader({ title, back, action }: { title: string; back?: boolean; action?: React.ReactNode }) {
@@ -73,6 +77,11 @@ function HomePage() {
     </div>} />
     <main className="page home-page">
       <div className="welcome"><div><small>Good afternoon, Meena</small><h1>Today’s business</h1></div><span className="live-pill">● LIVE DEMO</span></div>
+      <button className="dukaan-shortcut hero" onClick={() => navigate(data.catalog ? '/dukaan/manage' : '/dukaan/scan')}>
+        <span><Camera /></span>
+        <div><small>EK PHOTO DUKAAN · DEMO AI</small><strong>{data.catalog ? 'Your digital dukaan is ready' : 'Scan shop. Build dukaan.'}</strong><p>{data.catalog ? `${data.catalog.items.length} items · Manage, QR & share` : 'One photo → catalog, QR, share & restock hints'}</p></div>
+        <ChevronRight />
+      </button>
       <section className="sales-card">
         <div className="eyebrow">TODAY’S SALES</div>
         <div className="hero-amount">{formatINR(dash.salesToday)}</div>
@@ -241,6 +250,198 @@ function QRPage() {
       <p className="prototype-note">Demo QR payload only · No real payment API is used</p>
     </main>
   </>
+}
+
+type ScanStage = 'idle' | 'uploading' | 'reading' | 'building' | 'error'
+
+function DukaanScanPage() {
+  const navigate = useNavigate()
+  const createCatalog = useMerchantStore((s) => s.createCatalog)
+  const [stage, setStage] = useState<ScanStage>('idle')
+  const [preview, setPreview] = useState('')
+  const [error, setError] = useState('')
+
+  const processFile = async (file: File, imageUrl?: string) => {
+    if (!file.type.startsWith('image/')) {
+      setError('Choose a JPG, PNG, WebP or demo shop image.')
+      setStage('error')
+      return
+    }
+    setError('')
+    setPreview(imageUrl ?? URL.createObjectURL(file))
+    try {
+      setStage('uploading')
+      await wait(650)
+      setStage('reading')
+      const result = await demoVisionService.analyze({ fileName: file.name, fileSize: file.size, imageType: file.type })
+      await wait(750)
+      setStage('building')
+      await createCatalog({ ...result, sourceImageName: file.name })
+      await wait(650)
+      navigate('/dukaan/manage')
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Could not build the catalog. Try the demo photo.')
+      setStage('error')
+    }
+  }
+
+  const processSample = async (path: string, name: string) => {
+    try {
+      const response = await fetch(path)
+      if (!response.ok) throw new Error('Demo image is unavailable')
+      const blob = await response.blob()
+      await processFile(new File([blob], name, { type: blob.type || 'image/svg+xml' }), path)
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Could not load demo image')
+      setStage('error')
+    }
+  }
+
+  if (stage !== 'idle' && stage !== 'error') {
+    const copy = stage === 'uploading'
+      ? ['Uploading photo', 'Keeping one clear shop image ready']
+      : stage === 'reading'
+        ? ['Reading shelf', 'Finding products, visible prices and stock cues']
+        : ['Building catalog', 'Creating your editable digital dukaan']
+    return <>
+      <PageHeader title="Ek Photo Dukaan" back />
+      <main className="page scan-processing">
+        <div className="scan-preview">{preview && <img src={preview} alt="Selected shop" />}<span><Sparkles /></span></div>
+        <div className="spinner" />
+        <small>DEMO VISION · HEURISTIC</small><h1>{copy[0]}</h1><p>{copy[1]}…</p>
+        <div className="stage-track"><i className="done" /><i className={stage !== 'uploading' ? 'done' : ''} /><i className={stage === 'building' ? 'done' : ''} /></div>
+        <p className="vision-disclosure">No production OCR is running. Seeded demo images map deterministically; unknown photos receive an editable starter list.</p>
+      </main>
+    </>
+  }
+
+  return <>
+    <PageHeader title="Ek Photo Dukaan" back />
+    <main className="page">
+      <section className="scan-hero">
+        <span><Camera /></span><small>ONE PHOTO · ZERO DATA ENTRY</small>
+        <h1>Photo lo. Dukaan banao.</h1>
+        <p>Take one clear photo of your shelf, counter or printed price list. We’ll make an editable catalog, QR and share text.</p>
+      </section>
+      {error && <div className="alert error"><CircleAlert />{error}</div>}
+      <label className="capture-button">
+        <Camera /><span><b>Take shop photo</b><small>दुकान की फोटो लें</small></span>
+        <input type="file" accept="image/*" capture="environment" onChange={(event) => {
+          const file = event.target.files?.[0]
+          if (file) void processFile(file)
+        }} />
+      </label>
+      <label className="upload-button">
+        <Upload />Upload one image
+        <input type="file" accept="image/*" onChange={(event) => {
+          const file = event.target.files?.[0]
+          if (file) void processFile(file)
+        }} />
+      </label>
+      <SectionTitle>Or use a reliable demo photo</SectionTitle>
+      <div className="sample-grid">
+        <button onClick={() => void processSample('/demo/meena-kirana-shelf.svg', 'meena-kirana-shelf.svg')}><img src="/demo/meena-kirana-shelf.svg" alt="Meena Kirana shelf demo" /><b>Meena’s shelf</b><small>10 kirana items</small></button>
+        <button onClick={() => void processSample('/demo/tea-counter-rate-card.svg', 'tea-counter-rate-card.svg')}><img src="/demo/tea-counter-rate-card.svg" alt="Printed tea counter rate card demo" /><b>Printed rate card</b><small>6 counter items</small></button>
+      </div>
+      <div className="demo-boundary"><Sparkles /><p><b>Honest demo boundary</b><br />Seeded photos use deterministic mappings. Other images get a visual-heuristic starter catalog for editing.</p></div>
+      <p className="prototype-note">Unofficial hackathon prototype · No real Paytm API or vision model</p>
+    </main>
+  </>
+}
+
+function DukaanManagePage() {
+  const data = useData()
+  const navigate = useNavigate()
+  const updateItem = useMerchantStore((s) => s.updateCatalogItem)
+  const addItem = useMerchantStore((s) => s.addCatalogItem)
+  const removeItem = useMerchantStore((s) => s.removeCatalogItem)
+  const [message, setMessage] = useState('')
+  const [busy, setBusy] = useState('')
+  const catalog = data.catalog
+  if (!catalog) return <><PageHeader title="Ek Photo Dukaan" back /><main className="page"><EmptyState icon={<Image />} title="No dukaan yet" text="Take one shop photo to create your catalog." /><button className="primary full" onClick={() => navigate('/dukaan/scan')}>Scan shop photo</button></main></>
+
+  const link = `${window.location.origin}${window.location.pathname}#/dukaan/${catalog.slug}`
+  const available = catalog.items.filter((item) => item.available)
+  const needsAttention = catalog.items.filter((item) => !item.available || item.stockFlag === 'low')
+  const shareText = `Namaste! ${data.merchant.businessName} ka digital price list dekhiye: ${link}\n${available.slice(0, 4).map((item) => `${item.name} – ${formatINR(item.pricePaise)}`).join('\n')}\nAvailability may change.`
+  const copy = async (value: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(value)
+      setMessage(`${label} copied.`)
+    } catch {
+      setMessage('Copy was blocked. Open the dukaan and copy from the address bar.')
+    }
+  }
+
+  return <>
+    <PageHeader title="Ek Photo Dukaan" back action={<button className="header-link" onClick={() => navigate(`/dukaan/${catalog.slug}`)}>View live</button>} />
+    <main className="page">
+      <section className="catalog-summary">
+        <div><small>DIGITAL DUKAAN · LIVE</small><h1>{catalog.title}</h1><p>{catalog.items.length} items · {available.length} available</p></div>
+        <span><Check /></span>
+      </section>
+      <div className={`vision-note ${catalog.confidence}`}><Sparkles /><p><b>{catalog.confidence === 'starter' ? 'Starter list — please review' : 'Photo read complete'}</b><br />{catalog.readingNote}</p></div>
+      {message && <div className={`alert ${message.endsWith('copied.') ? 'success' : 'error'}`}>{message}</div>}
+      <SectionTitle>Catalog / सामान और दाम</SectionTitle>
+      <section className="catalog-editor">
+        {catalog.items.map((item) => <article key={item.id} className={!item.available ? 'unavailable' : ''}>
+          <span className={`stock-dot ${item.stockFlag}`} />
+          <div className="item-fields">
+            <input aria-label="Item name" defaultValue={item.name} onBlur={(event) => {
+              if (event.target.value.trim() !== item.name) void updateItem(item.id, { name: event.target.value })
+            }} />
+            <span><b className={`stock-text ${item.stockFlag}`}>{item.stockLabel}</b> · {item.category}</span>
+          </div>
+          <label className="price-edit">₹<input aria-label={`${item.name} price`} inputMode="decimal" defaultValue={item.pricePaise / 100} onBlur={(event) => {
+            const price = Number(event.target.value)
+            if (Number.isFinite(price) && price >= 0 && price * 100 !== item.pricePaise) void updateItem(item.id, { pricePaise: Math.round(price * 100) })
+          }} /></label>
+          <button className={`availability ${item.available ? 'on' : ''}`} onClick={() => void updateItem(item.id, { available: !item.available })}>{item.available ? 'Available' : 'Hidden'}</button>
+          <button className="remove-item" aria-label={`Remove ${item.name}`} onClick={() => void removeItem(item.id)}><Trash2 /></button>
+        </article>)}
+        <button className="add-item" disabled={busy === 'add'} onClick={async () => { setBusy('add'); await addItem(); setBusy('') }}><Plus />{busy === 'add' ? 'Adding…' : 'Add item'}</button>
+      </section>
+      <SectionTitle>Share dukaan</SectionTitle>
+      <section className="share-card">
+        <div className="mini-qr"><QRCodeSVG value={link} size={104} fgColor="#012b72" /></div>
+        <div><b>Customer price list QR</b><p>Scan opens the public-ish catalog. No checkout or payment is implied.</p><button onClick={() => navigate(`/dukaan/${catalog.slug}`)}><Eye />Preview</button></div>
+      </section>
+      <div className="share-actions">
+        <button onClick={() => void copy(link, 'Dukaan link')}><Copy />Copy link</button>
+        <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener,noreferrer')}><MessageCircle />WhatsApp</button>
+      </div>
+      <SectionTitle>Restock hints / फिर से मंगाएं</SectionTitle>
+      <section className="restock-card">
+        <Package />
+        <div><b>{needsAttention.length} items need attention</b><p>{needsAttention.length ? needsAttention.map((item) => item.name).slice(0, 3).join(', ') : 'No low-stock visual flags right now.'}</p><small>Photo cues + seeded payment amount matches · not exact inventory</small></div>
+      </section>
+      <button className="secondary full rescan" onClick={() => navigate('/dukaan/scan')}><RefreshCw />Scan a different photo</button>
+      <p className="prototype-note">Unofficial prototype · Catalog edits are saved by the demo API</p>
+    </main>
+  </>
+}
+
+function PublicDukaanPage() {
+  const { slug } = useParams()
+  const data = useData()
+  const catalog = data.catalog
+  if (!catalog || catalog.slug !== slug) return <><PageHeader title="Digital Dukaan" /><main className="page"><EmptyState icon={<Store />} title="Dukaan unavailable" text="This demo catalog is missing or was reset." /></main></>
+  const rows = catalog.items.filter((item) => item.available)
+  return <>
+    <PageHeader title="Digital Dukaan" />
+    <main className="page public-dukaan">
+      <section className="public-hero"><span><Store /></span><small>PRICE LIST · DEMO</small><h1>{data.merchant.businessName}</h1><p>{data.merchant.address}, {data.merchant.city}</p><i>Open today · Call {data.merchant.phone.replace('+91 ', '')}</i></section>
+      <div className="public-note">Prices and availability are merchant-edited. Contact the shop to order.</div>
+      <section className="public-list">{rows.map((item) => <article key={item.id}><span>{item.name.slice(0, 1)}</span><div><b>{item.name}</b><small>{item.category}</small></div><strong>{formatINR(item.pricePaise)}</strong></article>)}</section>
+      {!rows.length && <EmptyState icon={<Package />} title="Updating stock" text="The merchant has temporarily hidden all items." />}
+      <a className="call-shop" href={`tel:${data.merchant.phone.replace(/\s/g, '')}`}>Call shop / दुकान को कॉल करें</a>
+      <p className="prototype-note">Hackathon price-list prototype · Not official Paytm · No online checkout</p>
+    </main>
+  </>
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms))
 }
 
 function BusinessPage() {
@@ -422,7 +623,7 @@ function AppShell() {
   const actionError = useMerchantStore((state) => state.actionError)
   const syncFromApi = useMerchantStore((state) => state.syncFromApi)
   useEffect(() => { void syncFromApi() }, [syncFromApi])
-  const hideNav = ['/collect', '/qr', '/search', '/notifications', '/insights', '/settlements', '/customers'].some((p) => location.pathname.startsWith(p)) || /^\/payments\/.+/.test(location.pathname)
+  const hideNav = ['/collect', '/qr', '/search', '/notifications', '/insights', '/settlements', '/customers', '/dukaan'].some((p) => location.pathname.startsWith(p)) || /^\/payments\/.+/.test(location.pathname)
   if (bootStatus === 'loading') {
     return <div className="device-shell"><div className="app-surface"><PageHeader title="Loading" /><main className="page centered"><div className="spinner" /><h1>Loading merchant demo</h1><p>Syncing payments and settlements…</p></main></div></div>
   }
@@ -444,6 +645,9 @@ function AppShell() {
       <Route path="/notifications" element={<NotificationsPage />} />
       <Route path="/search" element={<SearchPage />} />
       <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/dukaan/scan" element={<DukaanScanPage />} />
+      <Route path="/dukaan/manage" element={<DukaanManagePage />} />
+      <Route path="/dukaan/:slug" element={<PublicDukaanPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
     {!hideNav && <nav className="bottom-nav">{tabs.map((t) => <NavLink to={t.to} end={t.to === '/'} key={t.to}>{t.icon}<span>{t.label}</span></NavLink>)}</nav>}

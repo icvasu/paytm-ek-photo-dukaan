@@ -4,7 +4,7 @@ import { buildSeed } from '../src/data/seed.js'
 import { buildInsights } from '../src/intelligence/engine.js'
 import { buildDraftTransaction, DemoPaytmService, applyChargeToDraft } from '../src/services/paytm/PaytmService.js'
 import { createId } from '../src/lib/ids.js'
-import type { CollectPaymentInput, MerchantStoreData } from '../src/types/models.js'
+import type { CatalogItem, CollectPaymentInput, MerchantStoreData, VisionResult } from '../src/types/models.js'
 
 let db: MerchantStoreData = buildSeed()
 const processor = new DemoPaytmService(700)
@@ -47,6 +47,70 @@ async function api(req: IncomingMessage, res: ServerResponse) {
   if (req.method === 'GET' && path === '/api/settlements') return json(res, 200, db.settlements)
   if (req.method === 'GET' && path === '/api/notifications') return json(res, 200, db.notifications)
   if (req.method === 'GET' && path === '/api/insights') return json(res, 200, buildInsights(db))
+  if (req.method === 'GET' && path === '/api/catalog') return json(res, 200, db.catalog)
+  if (req.method === 'GET' && path.startsWith('/api/dukaan/')) {
+    const slug = path.split('/').pop()
+    return json(res, db.catalog?.slug === slug ? 200 : 404, db.catalog?.slug === slug ? db.catalog : { error: 'Dukaan not found' })
+  }
+  if (req.method === 'POST' && path === '/api/catalog') {
+    const input = await body(req) as VisionResult & { sourceImageName?: string }
+    if (!Array.isArray(input.items) || input.items.length === 0) return json(res, 400, { error: 'Catalog needs at least one item' })
+    const safeItems = input.items.slice(0, 30).map((item): CatalogItem => ({
+      id: String(item.id || createId('item')),
+      name: String(item.name || 'New item').slice(0, 80),
+      pricePaise: Math.max(0, Math.round(Number(item.pricePaise) || 0)),
+      available: item.available !== false,
+      stockFlag: item.stockFlag === 'out' || item.stockFlag === 'low' ? item.stockFlag : 'in_stock',
+      stockLabel: String(item.stockLabel || 'Check stock').slice(0, 40),
+      category: String(item.category || 'General').slice(0, 40),
+    }))
+    db.catalog = {
+      id: 'dukaan_meena',
+      merchantId: db.merchant.id,
+      title: 'Meena Kirana Digital Dukaan',
+      slug: 'meena-kirana',
+      items: safeItems,
+      sourceImageName: String(input.sourceImageName || 'shop-photo').slice(0, 100),
+      sourceKind: input.sourceKind === 'demo' ? 'demo' : 'upload',
+      confidence: input.confidence === 'high' || input.confidence === 'medium' ? input.confidence : 'starter',
+      readingNote: String(input.readingNote || 'Editable demo catalog').slice(0, 240),
+      createdAt: db.demoClock,
+      updatedAt: db.demoClock,
+    }
+    return json(res, 201, db.catalog)
+  }
+  if (req.method === 'POST' && path === '/api/catalog/items') {
+    if (!db.catalog) return json(res, 404, { error: 'Create a catalog first' })
+    db.catalog.items.push({
+      id: createId('item'), name: 'New item', pricePaise: 1000,
+      available: true, stockFlag: 'in_stock', stockLabel: 'Check stock', category: 'General',
+    })
+    db.catalog.updatedAt = new Date().toISOString()
+    return json(res, 201, db.catalog)
+  }
+  if (req.method === 'POST' && /^\/api\/catalog\/items\/[^/]+$/.test(path)) {
+    if (!db.catalog) return json(res, 404, { error: 'Catalog not found' })
+    const id = path.split('/')[4]
+    const input = await body(req) as Partial<CatalogItem>
+    const item = db.catalog.items.find((value) => value.id === id)
+    if (!item) return json(res, 404, { error: 'Catalog item not found' })
+    if (typeof input.name === 'string' && input.name.trim()) item.name = input.name.trim().slice(0, 80)
+    if (Number.isFinite(input.pricePaise) && Number(input.pricePaise) >= 0) item.pricePaise = Math.round(Number(input.pricePaise))
+    if (typeof input.available === 'boolean') {
+      item.available = input.available
+      item.stockFlag = input.available ? (item.stockFlag === 'out' ? 'in_stock' : item.stockFlag) : 'out'
+      item.stockLabel = input.available ? (item.stockLabel === 'Not available' ? 'Check stock' : item.stockLabel) : 'Not available'
+    }
+    db.catalog.updatedAt = new Date().toISOString()
+    return json(res, 200, db.catalog)
+  }
+  if (req.method === 'POST' && /^\/api\/catalog\/items\/[^/]+\/remove$/.test(path)) {
+    if (!db.catalog) return json(res, 404, { error: 'Catalog not found' })
+    const id = path.split('/')[4]
+    db.catalog.items = db.catalog.items.filter((value) => value.id !== id)
+    db.catalog.updatedAt = new Date().toISOString()
+    return json(res, 200, db.catalog)
+  }
   if (req.method === 'POST' && path === '/api/payments') {
     const input = await body(req) as CollectPaymentInput
     if (!Number.isFinite(input.amountRupees) || input.amountRupees <= 0) return json(res, 400, { error: 'Enter a valid amount' })
