@@ -707,21 +707,32 @@ export async function handleDemoApi(req: IncomingMessage, res: ServerResponse) {
   }
 }
 
+/** Mounts the demo API on a Vite middleware stack (dev server or preview). */
+function mountDemoApi(middlewares: { use: (path: string, handler: (req: IncomingMessage, res: ServerResponse) => void) => unknown }) {
+  middlewares.use('/api', (req, res) => {
+    req.url = `/api${req.url ?? ''}`
+    void handleDemoApi(req, res).catch((error: unknown) => {
+      console.error('[demo-api-plugin]', error)
+      json(res, 500, {
+        error: 'The demo API failed to handle this request.',
+        code: 'handler_crash',
+        status: 500,
+      })
+    })
+  })
+}
+
 export function demoApiPlugin(): Plugin {
   return {
     name: 'paytm-merchant-demo-api',
     configureServer(server) {
-      server.middlewares.use('/api', (req, res) => {
-        req.url = `/api${req.url ?? ''}`
-        void handleDemoApi(req, res).catch((error: unknown) => {
-          console.error('[demo-api-plugin]', error)
-          json(res, 500, {
-            error: 'The demo API failed to handle this request.',
-            code: 'handler_crash',
-            status: 500,
-          })
-        })
-      })
+      mountDemoApi(server.middlewares)
+    },
+    // `vite preview` serves the real production bundle. Without this the built
+    // app loads and then every request fails, which looks like a broken demo
+    // rather than a server that was never started.
+    configurePreviewServer(server) {
+      mountDemoApi(server.middlewares)
     },
   }
 }
